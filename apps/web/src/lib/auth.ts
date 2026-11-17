@@ -1,6 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { verifyUserPassword } from "@growthpilot/core";
+// Deep import, not the package barrel: lib/auth.ts is also loaded by Edge
+// middleware for session checks, and the @growthpilot/core barrel now pulls
+// in Node-only code (Prisma, the OpenAI SDK) that Edge can't bundle.
+import { verifyUserPassword } from "@growthpilot/core/src/users";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },

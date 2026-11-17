@@ -8,3 +8,6 @@ export * from "./organizations";
 export * from "./workspaces";
 export * from "./invitations";
 export * from "./members";
+export * from "./usage";
+export * from "./strategy";
+export * from "./content";

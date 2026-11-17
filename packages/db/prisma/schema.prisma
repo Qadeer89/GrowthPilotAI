@@ -30,12 +30,13 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members     OrganizationMember[]
-  roles       Role[]
-  invitations Invitation[]
-  workspaces  Workspace[]
-  brands      Brand[]
-  auditLogs   AuditLog[]
+  members      OrganizationMember[]
+  roles        Role[]
+  invitations  Invitation[]
+  workspaces   Workspace[]
+  brands       Brand[]
+  auditLogs    AuditLog[]
+  usageRecords UsageRecord[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -158,10 +159,146 @@ model Brand {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
+  strategies   MarketingStrategy[]
+  contentItems ContentItem[]
+
   @@unique([workspaceId, name])
 }
 
+// ---------- Marketing Strategy ----------
+
+model MarketingStrategy {
+  id             String   @id @default(cuid())
+  organizationId String
+  workspaceId    String
+  brandId        String
+  positioning    String
+  plan30         String
+  plan60         String
+  plan90         String
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  brand           Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  personas        Persona[]
+  messagingPillars MessagingPillar[]
+  recommendations StrategyRecommendation[]
+
+  @@index([organizationId])
+  @@index([brandId])
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  strategyId  String
+  name        String
+  description String
+  painPoints  String[]
+  goals       String[]
+
+  strategy MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+}
+
+model MessagingPillar {
+  id          String @id @default(cuid())
+  strategyId  String
+  title       String
+  description String
+
+  strategy MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+}
+
+// Each recommendation carries reason/evidence/audience/channel/priority/effort/metric
+// per spec Module 1 — never just a bare suggestion.
+model StrategyRecommendation {
+  id               String   @id @default(cuid())
+  strategyId       String
+  recommendation   String
+  reason           String
+  evidenceType     String // "verified" | "assumption" — never presented as fact if assumed
+  evidence         String
+  targetAudience   String
+  suggestedChannel String
+  priority         String // "high" | "medium" | "low"
+  estimatedEffort  String // "low" | "medium" | "high"
+  successMetric    String
+  timeframeDays    Int // 30 | 60 | 90
+
+  strategy MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId])
+}
+
+// ---------- Content ----------
+
+model ContentItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  workspaceId    String
+  brandId        String
+  contentType    String
+  platform       String?
+  title          String?
+  body           String
+  status         String   @default("draft") // draft | in_review | approved | rejected
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  brand      Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  versions   ContentVersion[]
+  approvals  ContentApproval[]
+
+  @@index([organizationId])
+  @@index([brandId])
+}
+
+model ContentVersion {
+  id            String   @id @default(cuid())
+  contentItemId String
+  body          String
+  createdByUserId String
+  createdAt     DateTime @default(now())
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId])
+}
+
+model ContentApproval {
+  id            String   @id @default(cuid())
+  contentItemId String
+  approverId    String
+  status        String // approved | rejected
+  note          String?
+  createdAt     DateTime @default(now())
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId])
+}
+
 // ---------- Platform ----------
+
+// Every AI provider call records tokens here (spec Section 19) — usage
+// tracking exists from day one, not bolted on when billing ships.
+model UsageRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  workspaceId    String?
+  feature        String // "strategy_generation" | "content_generation" | ...
+  provider       String // "openai"
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  createdByUserId String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
 
 // Append-only audit trail (spec Section 17/20). Every sensitive action writes
 // here — role changes, invitations, org/workspace creation, future approvals.

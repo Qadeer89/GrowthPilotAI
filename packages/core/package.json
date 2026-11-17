@@ -8,6 +8,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@growthpilot/ai": "*",
     "@growthpilot/db": "*",
     "bcryptjs": "^3.0.3"
   },
