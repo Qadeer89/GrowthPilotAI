@@ -12,3 +12,5 @@ export * from "./usage";
 export * from "./strategy";
 export * from "./content";
 export * from "./creative";
+export * from "./integrations";
+export * from "./campaigns";

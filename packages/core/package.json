@@ -10,6 +10,7 @@
   "dependencies": {
     "@growthpilot/ai": "*",
     "@growthpilot/db": "*",
+    "@growthpilot/integrations": "*",
     "bcryptjs": "^3.0.3"
   },
   "devDependencies": {

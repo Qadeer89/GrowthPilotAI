@@ -34,10 +34,12 @@ model Organization {
   roles        Role[]
   invitations  Invitation[]
   workspaces   Workspace[]
-  brands         Brand[]
-  auditLogs      AuditLog[]
-  usageRecords   UsageRecord[]
-  creativeAssets CreativeAsset[]
+  brands           Brand[]
+  auditLogs        AuditLog[]
+  usageRecords     UsageRecord[]
+  creativeAssets   CreativeAsset[]
+  connectedAccounts ConnectedAccount[]
+  socialPosts      SocialPost[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -163,6 +165,7 @@ model Brand {
   strategies    MarketingStrategy[]
   contentItems  ContentItem[]
   videoProjects VideoProject[]
+  campaigns     Campaign[]
 
   @@unique([workspaceId, name])
 }
@@ -344,6 +347,97 @@ model VideoScene {
   videoProject VideoProject @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
 
   @@index([videoProjectId])
+}
+
+// ---------- Integrations ----------
+
+// An org's OAuth connection to a social provider. The row itself is never
+// deleted on "disconnect" (status flips instead), so SocialPost history
+// always has something to join against.
+model ConnectedAccount {
+  id                String   @id @default(cuid())
+  organizationId    String
+  provider          String // "linkedin"
+  providerAccountId String // provider's member/user id (LinkedIn: the OIDC "sub")
+  displayName       String?
+  status            String   @default("connected") // connected | disconnected | expired
+  connectedByUserId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  oauthToken   OAuthToken?
+  socialPosts  SocialPost[]
+
+  @@unique([organizationId, provider, providerAccountId])
+  @@index([organizationId])
+}
+
+// Encrypted at rest (packages/core/src/crypto.ts, AES-256-GCM keyed from
+// AUTH_SECRET) per spec Section 17 -- never stored or logged in plaintext.
+model OAuthToken {
+  id                   String   @id @default(cuid())
+  connectedAccountId   String   @unique
+  accessTokenEncrypted String
+  scope                String
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Campaigns ----------
+
+model Campaign {
+  id              String   @id @default(cuid())
+  organizationId  String
+  workspaceId     String
+  brandId         String
+  name            String
+  objective       String?
+  keyMessage      String?
+  cta             String?
+  status          String   @default("draft") // draft | active | completed
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  brand       Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  socialPosts SocialPost[]
+
+  @@index([organizationId])
+  @@index([brandId])
+}
+
+// One real publish attempt to one connected social account. idempotencyKey
+// means a retry of a row that already succeeded is a safe no-op, never a
+// double post. providerPostId/providerPostUrl are only ever set from the
+// provider's own response -- never fabricated.
+model SocialPost {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  workspaceId        String?
+  campaignId         String?
+  connectedAccountId String
+  provider           String // "linkedin"
+  body               String
+  status             String   @default("queued") // queued | publishing | published | failed
+  idempotencyKey     String   @unique
+  providerPostId     String?
+  providerPostUrl    String?
+  failureReason      String?
+  attempts           Int      @default(0)
+  createdByUserId    String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign         Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([campaignId])
 }
 
 // ---------- Platform ----------

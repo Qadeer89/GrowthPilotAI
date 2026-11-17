@@ -7,7 +7,8 @@ API connector — no shared database, auth, or deployment).
 ## Status
 
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
-Foundation), and Phase 3 (Creative Studio) are done.
+Foundation), Phase 3 (Creative Studio), and Phase 4 (Campaign & Social Publishing)
+are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -56,6 +57,26 @@ Needs `DATABASE_URL`/`DATABASE_URL_UNPOOLED` (Neon Postgres), `AUTH_SECRET`, and
 
 Needs `ffmpeg`/`ffprobe` on PATH for Creative Studio video rendering.
 
+Phase 4: Campaign & Social Publishing. A LinkedIn connector built against LinkedIn's
+current official OAuth 2.0 (authorization-code) and Posts API docs — not guessed from
+memory — in `packages/integrations`, with tokens encrypted at rest (AES-256-GCM, key
+derived from `AUTH_SECRET`) via `packages/core/src/crypto.ts`. A Social Accounts page
+to connect/disconnect a real LinkedIn account, a Campaigns page to create a campaign
+and publish a real text post through it, and a post-history list with status
+(`queued`/`publishing`/`published`/`failed`), the provider's own returned post
+URL, and a retry action on failure. Publishing is synchronous today (no Redis/BullMQ
+queue provisioned yet); the `SocialPost` schema (idempotency key + attempt count)
+is designed to drop into a real async queue later without a rewrite. LinkedIn's
+refresh-token support is restricted to select partners, so reconnecting re-runs the
+full OAuth flow rather than calling a refresh endpoint. Image-attached posts are
+out of scope for this phase (text-only); descoped because the Images API's upload
+step came back only partially verified against current docs.
+
+Verified end-to-end in the browser with a real LinkedIn account: Connect LinkedIn →
+LinkedIn's real consent screen → callback stores the connected account → composing
+and publishing a post → a real published LinkedIn post with a real provider post ID
+and URL stored on the `SocialPost` row.
+
 ## Next step
 
-Phase 4 (Campaign & Social Publishing). Not started yet.
+Phase 5 (Email Marketing & CRM). Not started yet.
