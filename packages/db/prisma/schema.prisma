@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ---------- Identity ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships OrganizationMember[]
+  sessions    Session[]
+  invitationsSent Invitation[] @relation("InvitedBy")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     OrganizationMember[]
+  roles       Role[]
+  invitations Invitation[]
+  workspaces  Workspace[]
+  brands      Brand[]
+  auditLogs   AuditLog[]
+}
+
+// System roles are seeded per organization at creation time (spec Section 3):
+// Owner, Admin, Marketing Manager, Content Creator, Analyst, Approver.
+model Role {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      OrganizationMember[]
+  permissions  RolePermission[]
+  invitations  Invitation[]
+
+  @@unique([organizationId, name])
+}
+
+// Global catalog of permission keys (e.g. "campaign.create", "ads.approve").
+// Granular per spec Section 3 — checked server-side, never only hidden in the UI.
+model Permission {
+  id          String @id @default(cuid())
+  key         String @unique
+  description String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  roleId         String
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+
+  @@unique([organizationId, userId])
+}
+
+model Invitation {
+  id              String   @id @default(cuid())
+  organizationId  String
+  email           String
+  roleId          String
+  token           String   @unique
+  status          String   @default("pending") // pending | accepted | revoked | expired
+  invitedByUserId String
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+  invitedBy    User         @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@index([organizationId])
+}
+
+// Our own session/audit record. Auth.js manages the actual login cookie/JWT;
+// this table tracks active sessions for admin visibility, independent of
+// whatever auth library is swapped in later.
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Workspace & Brand ----------
+
+model Workspace {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brands       Brand[]
+
+  @@unique([organizationId, slug])
+}
+
+model Brand {
+  id               String   @id @default(cuid())
+  organizationId   String
+  workspaceId      String
+  name             String
+  website          String?
+  industry         String?
+  description      String?
+  valueProposition String?
+  targetCountries  String[]
+  targetAudience   String?
+  tone             String?
+  brandColors      String[]
+  languages        String[]
+  monthlyBudget    Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+}
+
+// ---------- Platform ----------
+
+// Append-only audit trail (spec Section 17/20). Every sensitive action writes
+// here — role changes, invitations, org/workspace creation, future approvals.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  actorUserId    String?
+  action         String
+  targetType     String?
+  targetId       String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([action])
+}

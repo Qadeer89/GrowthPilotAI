@@ -1,0 +1,60 @@
+"use client";
+
+import { useActionState } from "react";
+import Link from "next/link";
+import { signupAction, type SignupResult } from "./actions";
+
+export default function SignupPage() {
+  const [state, formAction, pending] = useActionState<SignupResult, FormData>(
+    signupAction,
+    undefined,
+  );
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+      <h1 className="mb-1 text-2xl font-semibold text-slate-900">Create your organization</h1>
+      <p className="mb-6 text-sm text-slate-500">
+        Sets up your account, organization, and a default workspace.
+      </p>
+
+      <form action={formAction} className="flex flex-col gap-4">
+        <Field label="Your name" name="name" type="text" autoComplete="name" />
+        <Field label="Work email" name="email" type="email" autoComplete="email" />
+        <Field label="Password" name="password" type="password" autoComplete="new-password" />
+        <Field label="Company / organization name" name="companyName" type="text" />
+
+        {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {pending ? "Creating…" : "Create organization"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-sm text-slate-500">
+        Already have an account?{" "}
+        <Link href="/login" className="text-indigo-600 hover:underline">
+          Log in
+        </Link>
+      </p>
+    </main>
+  );
+}
+
+function Field(props: { label: string; name: string; type: string; autoComplete?: string }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm text-slate-700">
+      {props.label}
+      <input
+        name={props.name}
+        type={props.type}
+        autoComplete={props.autoComplete}
+        required
+        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
+      />
+    </label>
+  );
+}

@@ -1,0 +1,17 @@
+{
+  "name": "growthpilot-ai",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "test": "npm run test --workspace=packages/core",
+    "db:generate": "npm run generate --workspace=packages/db",
+    "db:migrate": "npm run migrate:dev --workspace=packages/db",
+    "db:studio": "npm run studio --workspace=packages/db"
+  }
+}
