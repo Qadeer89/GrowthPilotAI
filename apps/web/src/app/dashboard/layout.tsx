@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "#", label: "AI Marketing Agent", enabled: false },
   { href: "/dashboard/strategy", label: "Strategy & Research", enabled: true },
   { href: "/dashboard/content", label: "Content Studio", enabled: true },
-  { href: "#", label: "Creative & Video Studio", enabled: false },
+  { href: "/dashboard/creative", label: "Creative & Video Studio", enabled: true },
   { href: "#", label: "Campaigns", enabled: false },
   { href: "#", label: "Calendar", enabled: false },
   { href: "#", label: "Social Accounts", enabled: false },

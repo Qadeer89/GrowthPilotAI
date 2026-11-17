@@ -6,8 +6,8 @@ API connector — no shared database, auth, or deployment).
 
 ## Status
 
-Phase 0 (architecture/plan), Phase 1 (platform foundation), and Phase 2 (AI Marketing
-Foundation) are done.
+Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
+Foundation), and Phase 3 (Creative Studio) are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -19,6 +19,18 @@ personas, messaging pillars, a 30/60/90 recommendations plan with verified-vs-as
 evidence labeling), an AI Content Studio (draft generation, editing, and an
 approve/reject workflow gated on the `content.approve` permission), and per-organization
 AI usage tracking (tokens/calls per feature, surfaced on the dashboard overview).
+
+Phase 3: Creative & Video Studio — concept → script → storyboard → images → voiceover →
+rendered video, with each stage's actual status tracked (`concept`/`storyboard`/
+`captions`/`rendering`/`rendered`/`failed` — a storyboard is never shown as a finished
+video). Images via OpenAI (`gpt-image-1-mini`), voiceover via OpenAI TTS, and the final
+video assembled locally with ffmpeg (per-scene image+audio clips with burned-in
+captions, concatenated) — no paid video-generation API needed. Every generated
+image/audio/video is logged to an asset library (`CreativeAsset`) with status and an
+estimated cost, including failed generations, gated on the `creative.manage`
+permission. Assets are stored on local disk today (swap `packages/core/src/storage.ts`
+for a real bucket when deploying) and served through a tenant-checked route handler,
+never from a public static path.
 
 See [docs/00-repository-audit.md](docs/00-repository-audit.md) as the
 entry point into the full Phase 0 documentation set:
@@ -42,6 +54,8 @@ Needs `DATABASE_URL`/`DATABASE_URL_UNPOOLED` (Neon Postgres), `AUTH_SECRET`, and
 `OPENAI_API_KEY` (plus optional `OPENAI_MODEL`) in `apps/web/.env.local` and
 `packages/db/.env` — see `.env.example`.
 
+Needs `ffmpeg`/`ffprobe` on PATH for Creative Studio video rendering.
+
 ## Next step
 
-Phase 3 (Creative Studio). Not started yet.
+Phase 4 (Campaign & Social Publishing). Not started yet.

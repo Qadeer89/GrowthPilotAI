@@ -2,3 +2,6 @@ export * from "./types";
 export * from "./generate";
 export * from "./strategy";
 export * from "./content";
+export * from "./image";
+export * from "./speech";
+export * from "./video";
