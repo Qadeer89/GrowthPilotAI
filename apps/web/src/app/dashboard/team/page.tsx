@@ -20,22 +20,22 @@ export default async function TeamPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Team & Permissions</h1>
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Team & Permissions</h1>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-slate-700">Invite a teammate</h2>
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">Invite a teammate</h2>
         <div className="mt-2">
           <InviteForm roles={roles.map((r) => ({ id: r.id, name: r.name }))} />
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="text-sm font-semibold text-slate-700">Members</h2>
-        <ul className="mt-2 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">Members</h2>
+        <ul className="mt-2 divide-y divide-[var(--color-border)] gp-card">
           {members.map((m) => (
             <li key={m.id} className="flex justify-between px-4 py-3 text-sm">
-              <span className="text-slate-900">{m.user.name ?? m.user.email}</span>
-              <span className="text-slate-500">{m.role.name}</span>
+              <span className="text-[var(--color-text)]">{m.user.name ?? m.user.email}</span>
+              <span className="text-[var(--color-text-muted)]">{m.role.name}</span>
             </li>
           ))}
         </ul>
@@ -43,12 +43,12 @@ export default async function TeamPage() {
 
       {invitations.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold text-slate-700">Pending invitations</h2>
-          <ul className="mt-2 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
+          <h2 className="text-sm font-semibold text-[var(--color-text)]">Pending invitations</h2>
+          <ul className="mt-2 divide-y divide-[var(--color-border)] gp-card">
             {invitations.map((inv) => (
               <li key={inv.id} className="flex justify-between px-4 py-3 text-sm">
-                <span className="text-slate-900">{inv.email}</span>
-                <span className="text-slate-500">{inv.role.name}</span>
+                <span className="text-[var(--color-text)]">{inv.email}</span>
+                <span className="text-[var(--color-text-muted)]">{inv.role.name}</span>
               </li>
             ))}
           </ul>

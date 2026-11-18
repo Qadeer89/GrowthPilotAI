@@ -19,10 +19,10 @@ export default async function ContentPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Content Studio</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Content Studio</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
-          <Link href="/dashboard/brand" className="text-indigo-600 hover:underline">
+          <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
             Go to Brand Settings
           </Link>
           .
@@ -36,15 +36,15 @@ export default async function ContentPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Content Studio</h1>
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Content Studio</h1>
 
-      <section className="mt-6 rounded-md border border-slate-200 bg-white p-6">
+      <section className="mt-6 gp-card p-6">
         <ContentGenerateForm brands={brands.map((b) => ({ id: b.id, name: b.name }))} />
       </section>
 
       <section className="mt-8 flex flex-col gap-4">
         {items.length === 0 && (
-          <p className="text-sm text-slate-500">No content drafted yet.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">No content drafted yet.</p>
         )}
         {items.map((item) => (
           <ContentItemCard key={item.id} item={item} canApprove={canApprove} />

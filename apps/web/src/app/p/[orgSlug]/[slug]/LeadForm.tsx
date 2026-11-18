@@ -13,13 +13,13 @@ export function LeadForm({ orgSlug, landingPageId, ctaLabel }: { orgSlug: string
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
-      <input name="name" placeholder="Your name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-      <input name="email" type="email" required placeholder="you@example.com" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-      <textarea name="message" placeholder="How can we help?" rows={3} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+      <input name="name" placeholder="Your name" className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm" />
+      <input name="email" type="email" required placeholder="you@example.com" className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm" />
+      <textarea name="message" placeholder="How can we help?" rows={3} className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm" />
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
       >
         {pending ? "Sending…" : ctaLabel}
       </button>

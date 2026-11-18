@@ -11,18 +11,18 @@ import { AskAnalystForm } from "./AskAnalystForm";
 import { detectOptimizationAction, approveRecommendationAction, rejectRecommendationAction } from "./actions";
 
 const DATA_QUALITY_COLOR: Record<string, string> = {
-  provider_reported: "bg-emerald-100 text-emerald-700",
+  provider_reported: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
   estimated: "bg-sky-100 text-sky-700",
   attributed: "bg-sky-100 text-sky-700",
-  missing: "bg-slate-100 text-slate-500",
+  missing: "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]",
 };
 
 const REC_STATUS_COLOR: Record<string, string> = {
-  awaiting_approval: "bg-amber-100 text-amber-700",
+  awaiting_approval: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
   executing: "bg-sky-100 text-sky-700",
-  measured: "bg-emerald-100 text-emerald-700",
-  rejected: "bg-slate-100 text-slate-500",
-  failed: "bg-red-100 text-red-700",
+  measured: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+  rejected: "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]",
+  failed: "bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
 };
 
 export default async function AnalyticsPage() {
@@ -35,10 +35,10 @@ export default async function AnalyticsPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Analytics & Intelligence</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Analytics & Intelligence</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
-          <Link href="/dashboard/brand" className="text-indigo-600 hover:underline">
+          <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
             Go to Brand Settings
           </Link>
           .
@@ -55,25 +55,25 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Analytics & Intelligence</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Analytics & Intelligence</h1>
+      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
         Every number below carries a data_quality label. A channel with no real data yet is shown as missing, never
         estimated or guessed.
       </p>
 
-      <section className="mt-6 rounded-md border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-semibold text-slate-700">Metrics</h2>
+      <section className="mt-6 gp-card p-6">
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">Metrics</h2>
         <div className="mt-3 flex flex-col gap-2">
           {metrics.map((m, i) => (
-            <div key={`${m.channel}:${m.metricKey}:${i}`} className="flex items-start justify-between gap-3 border-b border-slate-100 py-2 text-sm last:border-0">
+            <div key={`${m.channel}:${m.metricKey}:${i}`} className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] py-2 text-sm last:border-0">
               <div>
-                <span className="font-mono text-xs uppercase text-slate-400">{m.channel}</span>
-                <p className="font-medium text-slate-900">{m.metricKey.replace(/_/g, " ")}</p>
-                {m.note && <p className="mt-0.5 text-xs text-slate-500">{m.note}</p>}
+                <span className="font-mono text-xs uppercase text-[var(--color-text-faint)]">{m.channel}</span>
+                <p className="font-medium text-[var(--color-text)]">{m.metricKey.replace(/_/g, " ")}</p>
+                {m.note && <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{m.note}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="font-semibold text-slate-900">{m.value === null ? "—" : m.value}</span>
-                <span className={`rounded px-2 py-0.5 text-xs ${DATA_QUALITY_COLOR[m.dataQuality] ?? "bg-slate-100 text-slate-600"}`}>
+                <span className="font-semibold text-[var(--color-text)]">{m.value === null ? "—" : m.value}</span>
+                <span className={`rounded px-2 py-0.5 text-xs ${DATA_QUALITY_COLOR[m.dataQuality] ?? "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"}`}>
                   {m.dataQuality.replace("_", " ")}
                 </span>
               </div>
@@ -82,9 +82,9 @@ export default async function AnalyticsPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-md border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-semibold text-slate-700">AI Marketing Analyst</h2>
-        <p className="mt-1 text-xs text-slate-500">
+      <section className="mt-6 gp-card p-6">
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">AI Marketing Analyst</h2>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
           Answers only from the real metrics above. Anything it can&apos;t answer from real data is listed as a gap,
           never guessed.
         </p>
@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
         </div>
 
         <div className="mt-4 flex flex-col gap-3">
-          {queries.length === 0 && <p className="text-sm text-slate-500">No questions asked yet.</p>}
+          {queries.length === 0 && <p className="text-sm text-[var(--color-text-muted)]">No questions asked yet.</p>}
           {queries.map((q) => {
             const answer = q.answer as {
               summary?: string;
@@ -102,9 +102,9 @@ export default async function AnalyticsPage() {
               recommendations?: string[];
             };
             return (
-              <div key={q.id} className="rounded border border-slate-100 bg-slate-50 p-3 text-sm">
-                <p className="font-medium text-slate-900">Q: {q.question}</p>
-                <p className="mt-1 text-slate-700">{answer.answer}</p>
+              <div key={q.id} className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] p-3 text-sm">
+                <p className="font-medium text-[var(--color-text)]">Q: {q.question}</p>
+                <p className="mt-1 text-[var(--color-text)]">{answer.answer}</p>
                 {answer.dataGaps && answer.dataGaps.length > 0 && (
                   <div className="mt-2">
                     <p className="text-xs font-medium text-amber-700">Data gaps</p>
@@ -117,8 +117,8 @@ export default async function AnalyticsPage() {
                 )}
                 {answer.recommendations && answer.recommendations.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-xs font-medium text-slate-500">Recommendations</p>
-                    <ul className="list-inside list-disc text-xs text-slate-600">
+                    <p className="text-xs font-medium text-[var(--color-text-muted)]">Recommendations</p>
+                    <ul className="list-inside list-disc text-xs text-[var(--color-text-muted)]">
                       {answer.recommendations.map((r, i) => (
                         <li key={i}>{r}</li>
                       ))}
@@ -133,35 +133,35 @@ export default async function AnalyticsPage() {
 
       <section className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-700">Optimization recommendations</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-text)]">Optimization recommendations</h2>
           <form action={detectOptimizationAction}>
-            <button className="rounded-md bg-slate-700 px-3 py-1.5 text-xs text-white hover:bg-slate-600">
+            <button className="rounded-md bg-[var(--color-text)] px-3 py-1.5 text-xs text-white hover:opacity-90">
               Scan for opportunities
             </button>
           </form>
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
           Detect → Analyze → Recommend run automatically on scan; nothing executes until you approve it below.
         </p>
 
         <div className="mt-3 flex flex-col gap-3">
-          {recommendations.length === 0 && <p className="text-sm text-slate-500">No recommendations yet.</p>}
+          {recommendations.length === 0 && <p className="text-sm text-[var(--color-text-muted)]">No recommendations yet.</p>}
           {recommendations.map((r) => (
-            <div key={r.id} className="rounded-md border border-slate-200 bg-white p-4 text-sm">
+            <div key={r.id} className="gp-card p-4 text-sm">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs text-slate-700">{r.type}</span>
-                <span className={`rounded px-2 py-0.5 text-xs capitalize ${REC_STATUS_COLOR[r.status] ?? "bg-slate-100 text-slate-600"}`}>
+                <span className="font-mono text-xs text-[var(--color-text)]">{r.type}</span>
+                <span className={`rounded px-2 py-0.5 text-xs capitalize ${REC_STATUS_COLOR[r.status] ?? "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"}`}>
                   {r.status.replace("_", " ")}
                 </span>
               </div>
-              {r.relatedAdCampaign && <p className="mt-1 text-xs text-slate-400">{r.relatedAdCampaign.name}</p>}
-              <p className="mt-1 text-slate-700">{r.rationale}</p>
-              <span className={`mt-1 inline-block rounded px-2 py-0.5 text-xs ${DATA_QUALITY_COLOR[r.dataQuality] ?? "bg-slate-100 text-slate-600"}`}>
+              {r.relatedAdCampaign && <p className="mt-1 text-xs text-[var(--color-text-faint)]">{r.relatedAdCampaign.name}</p>}
+              <p className="mt-1 text-[var(--color-text)]">{r.rationale}</p>
+              <span className={`mt-1 inline-block rounded px-2 py-0.5 text-xs ${DATA_QUALITY_COLOR[r.dataQuality] ?? "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"}`}>
                 {r.dataQuality.replace("_", " ")}
               </span>
-              {r.failureReason && <p className="mt-1 text-xs text-red-600">{r.failureReason}</p>}
+              {r.failureReason && <p className="mt-1 text-xs text-[var(--color-danger)]">{r.failureReason}</p>}
               {r.measurement != null && (
-                <pre className="mt-2 overflow-x-auto rounded bg-slate-50 p-2 text-xs text-slate-500">
+                <pre className="mt-2 overflow-x-auto rounded bg-[var(--color-bg)] p-2 text-xs text-[var(--color-text-muted)]">
                   {JSON.stringify(r.measurement, null, 2)}
                 </pre>
               )}

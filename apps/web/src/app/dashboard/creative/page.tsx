@@ -14,10 +14,10 @@ export default async function CreativePage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Creative & Video Studio</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Creative & Video Studio</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
-          <Link href="/dashboard/brand" className="text-indigo-600 hover:underline">
+          <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
             Go to Brand Settings
           </Link>
           .
@@ -30,17 +30,17 @@ export default async function CreativePage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Creative & Video Studio</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Creative & Video Studio</h1>
+      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
         Concept → script → storyboard → images → voiceover → rendered video, end to end.
       </p>
 
-      <section className="mt-6 rounded-md border border-slate-200 bg-white p-6">
+      <section className="mt-6 gp-card p-6">
         <NewVideoForm brandId={brands[0].id} />
       </section>
 
       <section className="mt-8 flex flex-col gap-4">
-        {projects.length === 0 && <p className="text-sm text-slate-500">No videos started yet.</p>}
+        {projects.length === 0 && <p className="text-sm text-[var(--color-text-muted)]">No videos started yet.</p>}
         {projects.map((project) => (
           <VideoProjectCard key={project.id} project={project} />
         ))}

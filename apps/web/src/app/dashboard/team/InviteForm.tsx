@@ -11,21 +11,21 @@ export function InviteForm({ roles }: { roles: { id: string; name: string }[] })
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-3">
-      <label className="flex flex-col gap-1 text-sm text-slate-700">
+      <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
         Email
         <input
           name="email"
           type="email"
           required
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm text-slate-700">
+      <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
         Role
         <select
           name="roleId"
           required
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
         >
           {roles.map((role) => (
             <option key={role.id} value={role.id}>
@@ -37,13 +37,13 @@ export function InviteForm({ roles }: { roles: { id: string; name: string }[] })
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
       >
         {pending ? "Sending…" : "Invite"}
       </button>
 
-      {state && "error" in state && <p className="text-sm text-red-600">{state.error}</p>}
-      {state && "success" in state && <p className="text-sm text-emerald-600">Invitation sent.</p>}
+      {state && "error" in state && <p className="text-sm text-[var(--color-danger)]">{state.error}</p>}
+      {state && "success" in state && <p className="text-sm text-[var(--color-success)]">Invitation sent.</p>}
     </form>
   );
 }

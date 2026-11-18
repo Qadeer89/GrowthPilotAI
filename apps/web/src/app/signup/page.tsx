@@ -12,8 +12,8 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="mb-1 text-2xl font-semibold text-slate-900">Create your organization</h1>
-      <p className="mb-6 text-sm text-slate-500">
+      <h1 className="mb-1 text-2xl font-semibold text-[var(--color-text)]">Create your organization</h1>
+      <p className="mb-6 text-sm text-[var(--color-text-muted)]">
         Sets up your account, organization, and a default workspace.
       </p>
 
@@ -28,15 +28,15 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="mt-2 rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
         >
           {pending ? "Creating…" : "Create organization"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-500">
+      <p className="mt-6 text-sm text-[var(--color-text-muted)]">
         Already have an account?{" "}
-        <Link href="/login" className="text-indigo-600 hover:underline">
+        <Link href="/login" className="text-[var(--color-primary)] hover:underline">
           Log in
         </Link>
       </p>
@@ -46,14 +46,14 @@ export default function SignupPage() {
 
 function Field(props: { label: string; name: string; type: string; autoComplete?: string }) {
   return (
-    <label className="flex flex-col gap-1 text-sm text-slate-700">
+    <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
       {props.label}
       <input
         name={props.name}
         type={props.type}
         autoComplete={props.autoComplete}
         required
-        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
+        className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
       />
     </label>
   );

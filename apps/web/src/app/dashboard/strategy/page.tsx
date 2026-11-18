@@ -18,10 +18,10 @@ export default async function StrategyPage({
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Strategy & Research</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Strategy & Research</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
-          <Link href="/dashboard/brand" className="text-indigo-600 hover:underline">
+          <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
             Go to Brand Settings
           </Link>
           .
@@ -35,7 +35,7 @@ export default async function StrategyPage({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Strategy & Research</h1>
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Strategy & Research</h1>
 
       <div className="mt-4 flex gap-2">
         {brands.map((b) => (
@@ -44,8 +44,8 @@ export default async function StrategyPage({
             href={`/dashboard/strategy?brandId=${b.id}`}
             className={`rounded-md px-3 py-1.5 text-sm ${
               b.id === selectedBrand.id
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-slate-700 hover:bg-slate-100"
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-alt)]"
             }`}
           >
             {b.name}
@@ -58,31 +58,31 @@ export default async function StrategyPage({
       </div>
 
       {strategies.length === 0 && (
-        <p className="mt-6 text-sm text-slate-500">No strategy generated yet for this brand.</p>
+        <p className="mt-6 text-sm text-[var(--color-text-muted)]">No strategy generated yet for this brand.</p>
       )}
 
       {strategies.map((strategy) => (
-        <article key={strategy.id} className="mt-8 rounded-md border border-slate-200 bg-white p-6">
-          <p className="text-xs text-slate-400">
+        <article key={strategy.id} className="mt-8 gp-card p-6">
+          <p className="text-xs text-[var(--color-text-faint)]">
             Generated {strategy.createdAt.toLocaleString()}
           </p>
 
-          <h2 className="mt-3 text-sm font-semibold text-slate-700">Positioning</h2>
-          <p className="mt-1 text-sm text-slate-900">{strategy.positioning}</p>
+          <h2 className="mt-3 text-sm font-semibold text-[var(--color-text)]">Positioning</h2>
+          <p className="mt-1 text-sm text-[var(--color-text)]">{strategy.positioning}</p>
 
-          <h2 className="mt-6 text-sm font-semibold text-slate-700">Personas</h2>
+          <h2 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Personas</h2>
           <div className="mt-2 grid grid-cols-2 gap-4">
             {strategy.personas.map((p) => (
-              <div key={p.id} className="rounded-md border border-slate-200 p-3 text-sm">
-                <p className="font-medium text-slate-900">{p.name}</p>
-                <p className="mt-1 text-slate-600">{p.description}</p>
+              <div key={p.id} className="rounded-md border border-[var(--color-border)] p-3 text-sm">
+                <p className="font-medium text-[var(--color-text)]">{p.name}</p>
+                <p className="mt-1 text-[var(--color-text-muted)]">{p.description}</p>
                 {p.painPoints.length > 0 && (
-                  <p className="mt-1 text-slate-500">
+                  <p className="mt-1 text-[var(--color-text-muted)]">
                     <span className="font-medium">Pain points:</span> {p.painPoints.join(", ")}
                   </p>
                 )}
                 {p.goals.length > 0 && (
-                  <p className="mt-1 text-slate-500">
+                  <p className="mt-1 text-[var(--color-text-muted)]">
                     <span className="font-medium">Goals:</span> {p.goals.join(", ")}
                   </p>
                 )}
@@ -90,8 +90,8 @@ export default async function StrategyPage({
             ))}
           </div>
 
-          <h2 className="mt-6 text-sm font-semibold text-slate-700">Messaging pillars</h2>
-          <ul className="mt-2 list-inside list-disc text-sm text-slate-700">
+          <h2 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Messaging pillars</h2>
+          <ul className="mt-2 list-inside list-disc text-sm text-[var(--color-text)]">
             {strategy.messagingPillars.map((m) => (
               <li key={m.id}>
                 <span className="font-medium">{m.title}:</span> {m.description}
@@ -99,11 +99,11 @@ export default async function StrategyPage({
             ))}
           </ul>
 
-          <h2 className="mt-6 text-sm font-semibold text-slate-700">Recommendations</h2>
+          <h2 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Recommendations</h2>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-slate-500">
+                <tr className="text-[var(--color-text-muted)]">
                   <th className="py-1 pr-3">Recommendation</th>
                   <th className="py-1 pr-3">Priority</th>
                   <th className="py-1 pr-3">Channel</th>
@@ -113,45 +113,45 @@ export default async function StrategyPage({
               </thead>
               <tbody>
                 {strategy.recommendations.map((r) => (
-                  <tr key={r.id} className="border-t border-slate-100 align-top">
-                    <td className="py-2 pr-3 text-slate-900">
+                  <tr key={r.id} className="border-t border-[var(--color-border)] align-top">
+                    <td className="py-2 pr-3 text-[var(--color-text)]">
                       {r.recommendation}
-                      <div className="text-xs text-slate-500">{r.reason}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{r.reason}</div>
                     </td>
-                    <td className="py-2 pr-3 capitalize text-slate-700">{r.priority}</td>
-                    <td className="py-2 pr-3 text-slate-700">{r.suggestedChannel}</td>
-                    <td className="py-2 pr-3 text-slate-700">
+                    <td className="py-2 pr-3 capitalize text-[var(--color-text)]">{r.priority}</td>
+                    <td className="py-2 pr-3 text-[var(--color-text)]">{r.suggestedChannel}</td>
+                    <td className="py-2 pr-3 text-[var(--color-text)]">
                       <span
                         className={`rounded px-1.5 py-0.5 text-xs ${
                           r.evidenceType === "verified"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
+                            ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
+                            : "bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
                         }`}
                       >
                         {r.evidenceType}
                       </span>{" "}
                       {r.evidence}
                     </td>
-                    <td className="py-2 pr-3 text-slate-700">{r.successMetric}</td>
+                    <td className="py-2 pr-3 text-[var(--color-text)]">{r.successMetric}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <h2 className="mt-6 text-sm font-semibold text-slate-700">30 / 60 / 90 day plan</h2>
+          <h2 className="mt-6 text-sm font-semibold text-[var(--color-text)]">30 / 60 / 90 day plan</h2>
           <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="font-medium text-slate-900">Day 30</p>
-              <p className="mt-1 text-slate-600">{strategy.plan30}</p>
+              <p className="font-medium text-[var(--color-text)]">Day 30</p>
+              <p className="mt-1 text-[var(--color-text-muted)]">{strategy.plan30}</p>
             </div>
             <div>
-              <p className="font-medium text-slate-900">Day 60</p>
-              <p className="mt-1 text-slate-600">{strategy.plan60}</p>
+              <p className="font-medium text-[var(--color-text)]">Day 60</p>
+              <p className="mt-1 text-[var(--color-text-muted)]">{strategy.plan60}</p>
             </div>
             <div>
-              <p className="font-medium text-slate-900">Day 90</p>
-              <p className="mt-1 text-slate-600">{strategy.plan90}</p>
+              <p className="font-medium text-[var(--color-text)]">Day 90</p>
+              <p className="mt-1 text-[var(--color-text-muted)]">{strategy.plan90}</p>
             </div>
           </div>
         </article>

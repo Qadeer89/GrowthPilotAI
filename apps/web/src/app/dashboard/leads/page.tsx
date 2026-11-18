@@ -9,15 +9,15 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Leads & CRM</h1>
-      <p className="mt-1 text-sm text-slate-500">Leads captured from landing pages land here.</p>
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">Leads & CRM</h1>
+      <p className="mt-1 text-sm text-[var(--color-text-muted)]">Leads captured from landing pages land here.</p>
 
-      <div className="mt-6 overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="mt-6 overflow-hidden gp-card">
         {leads.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500">No leads yet.</p>
+          <p className="p-4 text-sm text-[var(--color-text-muted)]">No leads yet.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs text-slate-500">
+            <thead className="border-b border-[var(--color-border)] bg-[var(--color-bg)] text-left text-xs text-[var(--color-text-muted)]">
               <tr>
                 <th className="px-4 py-2">Name</th>
                 <th className="px-4 py-2">Email</th>
@@ -28,11 +28,11 @@ export default async function LeadsPage() {
             </thead>
             <tbody>
               {leads.map((lead) => (
-                <tr key={lead.id} className="border-b border-slate-100">
+                <tr key={lead.id} className="border-b border-[var(--color-border)]">
                   <td className="px-4 py-2">{lead.name ?? "—"}</td>
                   <td className="px-4 py-2">{lead.email}</td>
-                  <td className="px-4 py-2 text-slate-500">{lead.landingPage?.name ?? "—"}</td>
-                  <td className="px-4 py-2 text-slate-600">{lead.message ?? "—"}</td>
+                  <td className="px-4 py-2 text-[var(--color-text-muted)]">{lead.landingPage?.name ?? "—"}</td>
+                  <td className="px-4 py-2 text-[var(--color-text-muted)]">{lead.message ?? "—"}</td>
                   <td className="px-4 py-2">
                     <LeadStatusSelect leadId={lead.id} status={lead.status} />
                   </td>

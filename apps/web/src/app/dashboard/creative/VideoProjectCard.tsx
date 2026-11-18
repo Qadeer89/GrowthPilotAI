@@ -42,22 +42,22 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  rendered: "bg-emerald-100 text-emerald-700",
-  failed: "bg-red-100 text-red-700",
-  rendering: "bg-amber-100 text-amber-700",
+  rendered: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+  failed: "bg-[var(--color-danger-soft)] text-[var(--color-danger)]",
+  rendering: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
 };
 
 export function VideoProjectCard({ project }: { project: Project }) {
-  const statusColor = STATUS_COLOR[project.status] ?? "bg-slate-100 text-slate-600";
+  const statusColor = STATUS_COLOR[project.status] ?? "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]";
   const canGenerateAssets = project.status === "storyboard" || project.status === "failed";
   const canRender = project.status === "captions";
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="gp-card p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-900">{project.topic}</p>
-          <p className="text-xs text-slate-400">Started {project.createdAt.toLocaleString()}</p>
+          <p className="text-sm font-medium text-[var(--color-text)]">{project.topic}</p>
+          <p className="text-xs text-[var(--color-text-faint)]">Started {project.createdAt.toLocaleString()}</p>
         </div>
         <span className={`rounded px-2 py-0.5 text-xs ${statusColor}`}>
           {STATUS_LABEL[project.status] ?? project.status}
@@ -65,14 +65,14 @@ export function VideoProjectCard({ project }: { project: Project }) {
       </div>
 
       {project.failureReason && (
-        <p className="mt-2 text-sm text-red-600">{project.failureReason}</p>
+        <p className="mt-2 text-sm text-[var(--color-danger)]">{project.failureReason}</p>
       )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {project.scenes.map((scene) => (
-          <div key={scene.id} className="rounded-md border border-slate-100 bg-slate-50 p-3 text-xs">
-            <p className="font-medium text-slate-700">Scene {scene.order}</p>
-            <p className="mt-1 text-slate-600">{scene.narration}</p>
+          <div key={scene.id} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] p-3 text-xs">
+            <p className="font-medium text-[var(--color-text)]">Scene {scene.order}</p>
+            <p className="mt-1 text-[var(--color-text-muted)]">{scene.narration}</p>
 
             {scene.imageAsset?.status === "completed" ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -82,17 +82,17 @@ export function VideoProjectCard({ project }: { project: Project }) {
                 className="mt-2 aspect-square w-full rounded-md object-cover"
               />
             ) : scene.imageAsset?.status === "failed" ? (
-              <p className="mt-2 text-red-600">Image failed: {scene.imageAsset.failureReason}</p>
+              <p className="mt-2 text-[var(--color-danger)]">Image failed: {scene.imageAsset.failureReason}</p>
             ) : (
-              <p className="mt-2 text-slate-400">Image not generated yet.</p>
+              <p className="mt-2 text-[var(--color-text-faint)]">Image not generated yet.</p>
             )}
 
             {scene.audioAsset?.status === "completed" ? (
               <audio controls className="mt-2 w-full" src={`/api/creative-assets/${scene.audioAsset.id}`} />
             ) : scene.audioAsset?.status === "failed" ? (
-              <p className="mt-2 text-red-600">Voiceover failed: {scene.audioAsset.failureReason}</p>
+              <p className="mt-2 text-[var(--color-danger)]">Voiceover failed: {scene.audioAsset.failureReason}</p>
             ) : (
-              <p className="mt-2 text-slate-400">Voiceover not generated yet.</p>
+              <p className="mt-2 text-[var(--color-text-faint)]">Voiceover not generated yet.</p>
             )}
           </div>
         ))}
@@ -100,7 +100,7 @@ export function VideoProjectCard({ project }: { project: Project }) {
 
       {project.finalVideoAsset?.status === "completed" && (
         <div className="mt-4">
-          <p className="text-xs font-medium text-slate-600">Final video</p>
+          <p className="text-xs font-medium text-[var(--color-text-muted)]">Final video</p>
           <video controls className="mt-1 max-w-md rounded-md" src={`/api/creative-assets/${project.finalVideoAsset.id}`} />
         </div>
       )}
@@ -109,7 +109,7 @@ export function VideoProjectCard({ project }: { project: Project }) {
         {canGenerateAssets && (
           <form action={generateAssetsAction}>
             <input type="hidden" name="videoProjectId" value={project.id} />
-            <button className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">
+            <button className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]">
               Generate assets (images + voiceover)
             </button>
           </form>
@@ -123,7 +123,7 @@ export function VideoProjectCard({ project }: { project: Project }) {
           </form>
         )}
         {project.status === "rendering" && (
-          <p className="self-center text-sm text-slate-500">Rendering can take a minute or two…</p>
+          <p className="self-center text-sm text-[var(--color-text-muted)]">Rendering can take a minute or two…</p>
         )}
       </div>
     </div>

@@ -19,7 +19,7 @@ export function ContentGenerateForm({ brands }: { brands: { id: string; name: st
 
   return (
     <form action={formAction} className="grid grid-cols-2 gap-4">
-      <label className="flex flex-col gap-1 text-sm text-slate-700">
+      <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
         Brand
         <select name="brandId" required className={inputClass}>
           {brands.map((b) => (
@@ -30,7 +30,7 @@ export function ContentGenerateForm({ brands }: { brands: { id: string; name: st
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm text-slate-700">
+      <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
         Content type
         <select name="contentType" required className={inputClass} defaultValue="social_post">
           {CONTENT_TYPE_OPTIONS.map((o) => (
@@ -48,12 +48,12 @@ export function ContentGenerateForm({ brands }: { brands: { id: string; name: st
       <Field label="Call to action (optional)" name="cta" />
       <TextArea label="Topic / brief" name="topic" required className="col-span-2" />
 
-      {state?.error && <p className="col-span-2 text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="col-span-2 text-sm text-[var(--color-danger)]">{state.error}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="col-span-2 mt-2 w-fit rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="col-span-2 mt-2 w-fit rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
       >
         {pending ? "Generating…" : "Generate draft"}
       </button>
@@ -62,11 +62,11 @@ export function ContentGenerateForm({ brands }: { brands: { id: string; name: st
 }
 
 const inputClass =
-  "rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500";
+  "rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]";
 
 function Field(props: { label: string; name: string }) {
   return (
-    <label className="flex flex-col gap-1 text-sm text-slate-700">
+    <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
       {props.label}
       <input name={props.name} type="text" className={inputClass} />
     </label>
@@ -75,7 +75,7 @@ function Field(props: { label: string; name: string }) {
 
 function TextArea(props: { label: string; name: string; required?: boolean; className?: string }) {
   return (
-    <label className={`flex flex-col gap-1 text-sm text-slate-700 ${props.className ?? ""}`}>
+    <label className={`flex flex-col gap-1 text-sm text-[var(--color-text)] ${props.className ?? ""}`}>
       {props.label}
       <textarea name={props.name} rows={3} required={props.required} className={inputClass} />
     </label>
