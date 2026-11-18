@@ -1,4 +1,14 @@
 import { prisma } from "@growthpilot/db";
+import { requireMembership } from "./rbac";
+
+export async function listRecentAuditLogs(organizationId: string, actorUserId: string, limit = 8) {
+  await requireMembership(organizationId, actorUserId);
+  return prisma.auditLog.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
 
 export async function writeAuditLog(entry: {
   organizationId?: string;

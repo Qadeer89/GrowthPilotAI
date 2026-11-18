@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { getPrimaryOrganizationForUser } from "@growthpilot/core";
 import { SidebarNav } from "./SidebarNav";
+import { TopHeader } from "./TopHeader";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -46,12 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-8 py-3">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Signed in as <span className="text-[var(--color-text)]">{session.user.email}</span>
-          </p>
-          <span className="gp-badge-primary">{context.role.name}</span>
-        </header>
+        <TopHeader email={session.user.email ?? ""} />
         <main className="flex-1 px-8 py-8">{children}</main>
       </div>
     </div>
