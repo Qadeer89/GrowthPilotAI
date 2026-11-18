@@ -14,3 +14,5 @@ export * from "./content";
 export * from "./creative";
 export * from "./integrations";
 export * from "./campaigns";
+export * from "./emails";
+export * from "./leads";

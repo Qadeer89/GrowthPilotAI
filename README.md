@@ -7,8 +7,8 @@ API connector — no shared database, auth, or deployment).
 ## Status
 
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
-Foundation), Phase 3 (Creative Studio), and Phase 4 (Campaign & Social Publishing)
-are done.
+Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing), and
+Phase 5 (Email Marketing & CRM) are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -77,6 +77,29 @@ LinkedIn's real consent screen → callback stores the connected account → com
 and publishing a post → a real published LinkedIn post with a real provider post ID
 and URL stored on the `SocialPost` row.
 
+Phase 5: Email Marketing & CRM. A Resend connector built against Resend's current
+official docs (send-email, webhooks, contacts) in `packages/integrations`, sending
+through a domain already verified in the account rather than provisioning a new one.
+A suppression list (`SuppressionEntry`) blocks a send locally before ever calling
+Resend, populated automatically from bounces/complaints and from a signed one-click
+unsubscribe link (HMAC'd with its own HKDF-derived key, `packages/core/src/crypto.ts`)
+in every sent email's footer. No publicly reachable URL exists yet to register a
+live Resend webhook against, so `/api/webhooks/resend` is built and signature-verified
+(Svix HMAC) but unregistered for now; in its place, every list of recent sends
+reconciles any still-pending row against Resend's own per-email status endpoint, so
+the UI reflects the real outcome without needing the webhook. Landing pages
+(public at `/p/<org-slug>/<page-slug>`) capture leads into a simple pipeline
+(`new` → `contacted` → `qualified`/`unqualified` → `converted`).
+
+Verified end-to-end for real: a send to Resend's `delivered@resend.dev` test address
+came back `sent · delivered`; a send to `bounced@resend.dev` came back
+`failed · bounced`, auto-suppressed the address, and a subsequent send attempt to it
+was rejected locally with no call to Resend made; the unsubscribe link from a real
+sent email's body was followed and suppressed the address, while a tampered token
+was correctly rejected; a public landing page was created, visited, and its lead
+form submission landed in the Leads & CRM pipeline with a working status update.
+
 ## Next step
 
-Phase 5 (Email Marketing & CRM). Not started yet.
+Phase 6 (Paid Advertising). Needs real Google Ads / Meta Ads developer accounts
+before it can start.

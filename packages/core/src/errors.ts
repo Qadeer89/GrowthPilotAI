@@ -18,3 +18,10 @@ export class ConflictError extends Error {
     this.name = "ConflictError";
   }
 }
+
+export class ValidationError extends Error {
+  constructor(message = "Invalid input") {
+    super(message);
+    this.name = "ValidationError";
+  }
+}

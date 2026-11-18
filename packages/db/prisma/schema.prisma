@@ -40,6 +40,10 @@ model Organization {
   creativeAssets   CreativeAsset[]
   connectedAccounts ConnectedAccount[]
   socialPosts      SocialPost[]
+  emailSends        EmailSend[]
+  suppressionEntries SuppressionEntry[]
+  landingPages      LandingPage[]
+  leads             Lead[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -166,6 +170,7 @@ model Brand {
   contentItems  ContentItem[]
   videoProjects VideoProject[]
   campaigns     Campaign[]
+  landingPages  LandingPage[]
 
   @@unique([workspaceId, name])
 }
@@ -405,6 +410,7 @@ model Campaign {
 
   brand       Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
   socialPosts SocialPost[]
+  emailSends  EmailSend[]
 
   @@index([organizationId])
   @@index([brandId])
@@ -438,6 +444,93 @@ model SocialPost {
 
   @@index([organizationId])
   @@index([campaignId])
+}
+
+// One real send attempt through the provider. idempotencyKey means a retry
+// of a row that already succeeded is a safe no-op. providerMessageId and
+// lastEvent are only ever set from the provider's own response/webhook --
+// never fabricated. lastEvent mirrors Resend's own event names so the UI
+// never shows "delivered" for something that only queued.
+model EmailSend {
+  id               String    @id @default(cuid())
+  organizationId   String
+  workspaceId      String?
+  campaignId       String?
+  toEmail          String
+  subject          String
+  bodyHtml         String
+  status           String    @default("queued") // queued | sent | bounced | complained | failed
+  idempotencyKey   String    @unique
+  providerMessageId String?
+  lastEvent        String? // sent | delivered | bounced | complained | delivery_delayed
+  failureReason    String?
+  attempts         Int       @default(0)
+  createdByUserId  String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign     Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([campaignId])
+  @@index([providerMessageId])
+}
+
+// Mirrors Resend's own suppression list (hard bounce / spam complaint /
+// unsubscribe) so a send is blocked locally before ever calling the
+// provider, not just relying on the provider to silently drop it.
+model SuppressionEntry {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String
+  reason         String // bounced | complained | unsubscribed
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+}
+
+model LandingPage {
+  id             String   @id @default(cuid())
+  organizationId String
+  workspaceId    String
+  brandId        String
+  slug           String
+  name           String
+  headline       String
+  body           String
+  ctaLabel       String   @default("Get in touch")
+  published      Boolean  @default(false)
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brand        Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  leads        Lead[]
+
+  @@unique([organizationId, slug])
+}
+
+model Lead {
+  id             String   @id @default(cuid())
+  organizationId String
+  workspaceId    String
+  landingPageId  String?
+  name           String?
+  email          String
+  message        String?
+  status         String   @default("new") // new | contacted | qualified | unqualified | converted
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  landingPage  LandingPage? @relation(fields: [landingPageId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([landingPageId])
 }
 
 // ---------- Platform ----------

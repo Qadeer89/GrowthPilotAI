@@ -116,3 +116,9 @@ export async function assertSlugAvailable(slug: string) {
   const existing = await prisma.organization.findUnique({ where: { slug } });
   if (existing) throw new ConflictError("Slug already in use");
 }
+
+// Public: used by the public-facing landing page route, which has no logged-in
+// user to resolve an org from. No permission check -- the slug is the URL.
+export async function findOrganizationBySlug(slug: string) {
+  return prisma.organization.findUnique({ where: { slug } });
+}
