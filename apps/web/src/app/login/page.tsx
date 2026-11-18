@@ -1,14 +1,30 @@
 "use client";
 
-import { Suspense, useActionState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 import { loginAction, type LoginResult } from "./actions";
 
 function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { showToast } = useToast();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const [state, formAction, pending] = useActionState<LoginResult, FormData>(loginAction, undefined);
+
+  useEffect(() => {
+    if (searchParams.get("loggedOut") === "1") {
+      showToast("info", "You've been logged out.");
+      router.replace("/login");
+    }
+  }, [searchParams, router, showToast]);
+
+  useEffect(() => {
+    if (state?.error) {
+      showToast("error", state.error);
+    }
+  }, [state, showToast]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SidebarNav } from "./SidebarNav";
 import { TopHeader } from "./TopHeader";
+import { useToast } from "@/components/Toast";
 
 export function DashboardChrome({
   orgName,
@@ -18,6 +20,20 @@ export function DashboardChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { showToast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("welcome") === "1") {
+      showToast("success", `Account created successfully! Welcome to GrowthPilot AI, ${orgName}.`);
+      router.replace(pathname);
+    } else if (searchParams.get("justLoggedIn") === "1") {
+      showToast("success", "Welcome back!");
+      router.replace(pathname);
+    }
+  }, [searchParams, orgName, pathname, router, showToast]);
 
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)]">

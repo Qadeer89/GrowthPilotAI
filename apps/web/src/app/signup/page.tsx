@@ -1,14 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 import { signupAction, type SignupResult } from "./actions";
 
 export default function SignupPage() {
+  const { showToast } = useToast();
   const [state, formAction, pending] = useActionState<SignupResult, FormData>(
     signupAction,
     undefined,
   );
+
+  useEffect(() => {
+    if (state?.error) {
+      showToast("error", state.error);
+    }
+  }, [state, showToast]);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">

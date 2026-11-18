@@ -33,5 +33,5 @@ export async function signupAction(_prev: SignupResult, formData: FormData): Pro
   }
 
   await signIn("credentials", { email, password, redirect: false });
-  redirect("/dashboard");
+  redirect("/dashboard?welcome=1");
 }

@@ -20,5 +20,6 @@ export async function loginAction(_prev: LoginResult, formData: FormData): Promi
     return { error: "Could not sign in." };
   }
 
-  redirect(callbackUrl);
+  const separator = callbackUrl.includes("?") ? "&" : "?";
+  redirect(`${callbackUrl}${separator}justLoggedIn=1`);
 }

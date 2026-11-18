@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   async function logoutAction() {
     "use server";
-    await signOut({ redirectTo: "/login" });
+    await signOut({ redirectTo: "/login?loggedOut=1" });
   }
 
   return (
