@@ -16,3 +16,4 @@ export * from "./integrations";
 export * from "./campaigns";
 export * from "./emails";
 export * from "./leads";
+export * from "./ads";

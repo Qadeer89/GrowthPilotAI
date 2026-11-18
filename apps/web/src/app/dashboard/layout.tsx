@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { href: "#", label: "Calendar", enabled: false },
   { href: "/dashboard/social-accounts", label: "Social Accounts", enabled: true },
   { href: "/dashboard/email", label: "Email Marketing", enabled: true },
-  { href: "#", label: "Paid Advertising", enabled: false },
+  { href: "/dashboard/paid-ads", label: "Paid Advertising", enabled: true },
   { href: "/dashboard/leads", label: "Leads & CRM", enabled: true },
   { href: "/dashboard/landing-pages", label: "Landing Pages", enabled: true },
   { href: "#", label: "Analytics", enabled: false },

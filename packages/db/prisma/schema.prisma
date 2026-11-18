@@ -44,6 +44,7 @@ model Organization {
   suppressionEntries SuppressionEntry[]
   landingPages      LandingPage[]
   leads             Lead[]
+  adCampaigns       AdCampaign[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -171,6 +172,7 @@ model Brand {
   videoProjects VideoProject[]
   campaigns     Campaign[]
   landingPages  LandingPage[]
+  adCampaigns   AdCampaign[]
 
   @@unique([workspaceId, name])
 }
@@ -360,19 +362,21 @@ model VideoScene {
 // deleted on "disconnect" (status flips instead), so SocialPost history
 // always has something to join against.
 model ConnectedAccount {
-  id                String   @id @default(cuid())
-  organizationId    String
-  provider          String // "linkedin"
-  providerAccountId String // provider's member/user id (LinkedIn: the OIDC "sub")
-  displayName       String?
-  status            String   @default("connected") // connected | disconnected | expired
-  connectedByUserId String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  organizationId     String
+  provider           String // "linkedin" | "google_ads"
+  providerAccountId  String // provider's member/user id (LinkedIn: OIDC "sub"; Google Ads: customer ID, digits only)
+  managerCustomerId  String? // Google Ads only: the manager (MCC) ID to send as login-customer-id
+  displayName        String?
+  status             String   @default("connected") // connected | disconnected | expired
+  connectedByUserId  String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   oauthToken   OAuthToken?
   socialPosts  SocialPost[]
+  adCampaigns  AdCampaign[]
 
   @@unique([organizationId, provider, providerAccountId])
   @@index([organizationId])
@@ -381,13 +385,14 @@ model ConnectedAccount {
 // Encrypted at rest (packages/core/src/crypto.ts, AES-256-GCM keyed from
 // AUTH_SECRET) per spec Section 17 -- never stored or logged in plaintext.
 model OAuthToken {
-  id                   String   @id @default(cuid())
-  connectedAccountId   String   @unique
-  accessTokenEncrypted String
-  scope                String
-  expiresAt            DateTime
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  connectedAccountId    String   @unique
+  accessTokenEncrypted  String
+  refreshTokenEncrypted String? // Google Ads issues a long-lived refresh token; LinkedIn does not.
+  scope                 String
+  expiresAt             DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
 }
@@ -411,6 +416,7 @@ model Campaign {
   brand       Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
   socialPosts SocialPost[]
   emailSends  EmailSend[]
+  adCampaigns AdCampaign[]
 
   @@index([organizationId])
   @@index([brandId])
@@ -531,6 +537,58 @@ model Lead {
 
   @@index([organizationId])
   @@index([landingPageId])
+}
+
+// ---------- Paid Advertising ----------
+
+// A draft or launched ad campaign on an external ad platform. `status` never
+// reflects anything the provider hasn't confirmed: it stays "draft" until a
+// human approves it (see AdApproval) and "launched" only after the provider
+// has actually accepted the create call -- provider*ResourceName fields are
+// only ever set from the provider's own response.
+model AdCampaign {
+  id                                 String   @id @default(cuid())
+  organizationId                     String
+  workspaceId                        String
+  brandId                            String
+  connectedAccountId                 String
+  campaignId                         String? // optional link to the cross-channel Campaign
+  provider                           String // "google_ads"
+  name                               String
+  dailyBudgetMicros                  BigInt // Google Ads micros: currency units * 1,000,000
+  status                             String   @default("draft") // draft | pending_approval | approved | rejected | launched | paused | failed
+  providerCampaignBudgetResourceName String?
+  providerCampaignResourceName       String?
+  providerStatus                     String? // last status read back from the provider (e.g. PAUSED, ENABLED)
+  failureReason                      String?
+  createdByUserId                    String
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brand            Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  campaign         Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  approvals        AdApproval[]
+
+  @@index([organizationId])
+  @@index([brandId])
+}
+
+// The approval gate itself (spec Section 21 / Phase 6 exit criteria): a
+// campaign can only launch if an AdApproval row with status "approved"
+// exists for it. This is enforced in packages/core, never only in the UI.
+model AdApproval {
+  id               String   @id @default(cuid())
+  adCampaignId     String
+  approvedByUserId String
+  status           String // "approved" | "rejected"
+  note             String?
+  createdAt        DateTime @default(now())
+
+  adCampaign AdCampaign @relation(fields: [adCampaignId], references: [id], onDelete: Cascade)
+
+  @@index([adCampaignId])
 }
 
 // ---------- Platform ----------

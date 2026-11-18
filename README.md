@@ -7,8 +7,8 @@ API connector — no shared database, auth, or deployment).
 ## Status
 
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
-Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing), and
-Phase 5 (Email Marketing & CRM) are done.
+Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing),
+Phase 5 (Email Marketing & CRM), and Phase 6 (Paid Advertising) are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -99,7 +99,38 @@ sent email's body was followed and suppressed the address, while a tampered toke
 was correctly rejected; a public landing page was created, visited, and its lead
 form submission landed in the Leads & CRM pipeline with a working status update.
 
+Phase 6: Paid Advertising. A Google Ads connector built against Google's current
+official REST docs (`developers.google.com/google-ads/api/rest/*`, v26) in
+`packages/integrations/src/google-ads.ts` — OAuth 2.0 web flow with a stored
+refresh token (encrypted at rest, same `encryptSecret`/`decryptSecret` as other
+connectors), a developer-token header, and the bulk `googleAds:mutate` pattern to
+create a CampaignBudget + a SEARCH Campaign, always created `PAUSED`. An
+`AdCampaign`/`AdApproval` schema and `packages/core/src/ads.ts` implement a real
+approval gate: `launchAdCampaign` checks both the campaign's `status` *and* an
+independent query for a real `AdApproval` row before ever calling Google, so a
+tampered status alone cannot bypass it — proven by an automated test
+(`packages/core/src/__tests__/ad-approval-gate.test.ts`) against the real dev
+database, not a mock. An emergency stop (`pauseAdCampaign`) pauses a launched
+campaign on the provider and re-confirms its status from Google rather than
+assuming the pause succeeded. Meta Ads is descoped from this phase — only a
+Google Ads developer account exists so far.
+
+Verified end-to-end for real: connected two real Google Ads customer accounts via
+OAuth (refresh token stored, encrypted); created a draft campaign; the approval
+gate rejected the launch attempt before it ever reached Google, both via the
+service layer directly (automated test) and via a tampered-status row with no
+real approval record; once approved, a real launch attempt reached Google Ads'
+API and came back with a real, honest error
+(`CLOUD_PROJECT_NOT_APPROVED_FOR_PRODUCTION` — the developer token is at "Test
+Account" access, which per Google's docs cannot operate on a production manager
+account at all, only on accounts under a separate test-manager hierarchy) — the
+campaign row was marked `failed` with that real error text, never a fabricated
+success. A full successful launch + provider-confirmed status + emergency-stop
+pause is still pending a dedicated Google Ads test-manager/test-account
+hierarchy (free, but a separate account Google requires creating manually) or
+an approved "Basic/Standard" developer token access level for the production
+account.
+
 ## Next step
 
-Phase 6 (Paid Advertising). Needs real Google Ads / Meta Ads developer accounts
-before it can start.
+Phase 7 (Autonomous Marketing Agent).
