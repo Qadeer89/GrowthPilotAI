@@ -8,8 +8,8 @@ API connector — no shared database, auth, or deployment).
 
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
 Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing),
-Phase 5 (Email Marketing & CRM), Phase 6 (Paid Advertising), and Phase 7
-(Autonomous Marketing Agent) are done.
+Phase 5 (Email Marketing & CRM), Phase 6 (Paid Advertising), Phase 7
+(Autonomous Marketing Agent), and Phase 8 (Analytics & Intelligence) are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -170,6 +170,44 @@ safety classifier as a paid/destructive action — left for the user to click �
 which is itself a second, independent confirmation that the gate is a real
 stop and not just a UI label.
 
+Phase 8: Analytics & Intelligence. Unified analytics (spec Section 10,
+`packages/core/src/analytics.ts`) computes every metric live from this app's
+own real data (email sends, leads, published landing pages, launched ad
+campaigns) and labels each one with a `data_quality` flag --
+`provider_reported`, `estimated`, `attributed`, or `missing` -- rather than
+ever fabricating a number; ad spend/ROI is reported `missing` with a real
+reason whenever no campaign has reached a provider-confirmed `launched`
+status, which is the case in this environment today. The AI Marketing
+Analyst (`packages/ai/src/analyst.ts`) is only ever shown that same labeled
+list and is instructed to put anything it can't answer into `dataGaps`
+rather than guess -- never asked to produce a number itself. The
+optimization engine (`packages/core/src/optimization.ts`) runs a
+Detect -> Analyze -> Recommend -> Approve -> Execute -> Validate -> Measure
+lifecycle on deterministic, server-side checks against real campaign state
+(no AI call in the loop, so it's fully reproducible): a `launched` campaign
+with no real spend reporting gets a `pause_unmonitored_spend` recommendation,
+and a `failed` campaign gets an informational `review_failed_launch` one.
+Nothing reaches `executing` without an explicit human approval, and the one
+automated action type reuses Phase 6's unchanged `pauseAdCampaign` -- so
+approving it is a real provider call, not a status flip.
+
+Verified: 15/15 across the full `packages/core` suite (6 new tests covering
+the missing-ad-spend label, the AI analyst correctly refusing to estimate an
+ROI figure with real OpenAI calls, detection + idempotency, an informational
+recommendation measuring honestly with no automated action, a pause
+recommendation attempting the real provider call and failing honestly when
+the campaign was never actually launched, and a rejected recommendation
+never touching anything). Verified again live in the browser against this
+app's real dev data: the Analytics page showed the real "missing" ad-spend
+label and real email/lead counts; asking "What is our ROI on ad spend, and
+how are our emails performing?" returned a real answer that explicitly
+refused to estimate ROI and listed the real data gaps instead; clicking
+"Scan for opportunities" found this org's one real failed campaign (from
+Phase 6's own end-to-end test) and created a real `review_failed_launch`
+recommendation; approving it went Detect -> Measured for real, ending in a
+`measured` status with an honest `{ action: "none" }` measurement, since
+this recommendation type has no automated fix.
+
 ## Next step
 
-Phase 8 (Analytics & Intelligence).
+Phase 9 (RankPilot Internal Launch).

@@ -18,3 +18,5 @@ export * from "./emails";
 export * from "./leads";
 export * from "./ads";
 export * from "./agent";
+export * from "./analytics";
+export * from "./optimization";

@@ -46,6 +46,8 @@ model Organization {
   leads             Lead[]
   adCampaigns       AdCampaign[]
   agentTasks        AgentTask[]
+  analystQueries    AnalystQuery[]
+  optimizationRecommendations OptimizationRecommendation[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -175,6 +177,8 @@ model Brand {
   landingPages  LandingPage[]
   adCampaigns   AdCampaign[]
   agentTasks    AgentTask[]
+  analystQueries              AnalystQuery[]
+  optimizationRecommendations OptimizationRecommendation[]
 
   @@unique([workspaceId, name])
 }
@@ -572,6 +576,7 @@ model AdCampaign {
   connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
   campaign         Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   approvals        AdApproval[]
+  optimizationRecommendations OptimizationRecommendation[]
 
   @@index([organizationId])
   @@index([brandId])
@@ -639,6 +644,61 @@ model AgentStep {
   agentTask AgentTask @relation(fields: [agentTaskId], references: [id], onDelete: Cascade)
 
   @@index([agentTaskId])
+}
+
+// ---------- Analytics & Intelligence ----------
+
+// A saved Q&A against the AI Marketing Analyst (spec Section 10). `answer` is
+// generated only from metrics computed at ask-time in
+// packages/core/src/analytics.ts, each already carrying a data_quality flag
+// -- the model is never given room to invent a number; anything it can't
+// answer from real data lands in the answer's own dataGaps, not a guess.
+model AnalystQuery {
+  id              String   @id @default(cuid())
+  organizationId  String
+  workspaceId     String
+  brandId         String
+  question        String
+  answer          Json
+  createdByUserId String
+  createdAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brand        Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// Detect -> Analyze -> Recommend -> Approve -> Execute -> Validate -> Measure
+// (Phase 8). `status` only ever advances past "approved" on a real action --
+// nothing here can reach "measured" without both a human approval and (for
+// an automated type) a real provider call actually completing, same
+// discipline as the AdApproval gate. No recommendation type performs a
+// financial change without going through this approval step first.
+model OptimizationRecommendation {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  workspaceId         String
+  brandId             String
+  relatedAdCampaignId String?
+  type                String // "pause_unmonitored_spend" | "review_failed_launch"
+  rationale           String
+  dataQuality         String // "provider_reported" | "estimated" | "attributed" | "missing"
+  proposedChange      Json?
+  status              String   @default("awaiting_approval") // awaiting_approval | approved | executing | measured | rejected | failed
+  measurement         Json?
+  failureReason       String?
+  approvedByUserId    String?
+  createdByUserId     String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brand             Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  relatedAdCampaign AdCampaign?  @relation(fields: [relatedAdCampaignId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([relatedAdCampaignId])
 }
 
 // ---------- Platform ----------
