@@ -45,6 +45,7 @@ model Organization {
   landingPages      LandingPage[]
   leads             Lead[]
   adCampaigns       AdCampaign[]
+  agentTasks        AgentTask[]
 }
 
 // System roles are seeded per organization at creation time (spec Section 3):
@@ -173,6 +174,7 @@ model Brand {
   campaigns     Campaign[]
   landingPages  LandingPage[]
   adCampaigns   AdCampaign[]
+  agentTasks    AgentTask[]
 
   @@unique([workspaceId, name])
 }
@@ -589,6 +591,54 @@ model AdApproval {
   adCampaign AdCampaign @relation(fields: [adCampaignId], references: [id], onDelete: Cascade)
 
   @@index([adCampaignId])
+}
+
+// ---------- Autonomous Marketing Agent ----------
+
+// A natural-language request turned into a structured, ordered plan of tool
+// calls. `status` tracks real execution progress, never assumed completion.
+model AgentTask {
+  id              String   @id @default(cuid())
+  organizationId  String
+  workspaceId     String
+  brandId         String
+  requestText     String
+  status          String   @default("planned") // planned | awaiting_approval | executing | completed | failed
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brand        Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  steps        AgentStep[]
+
+  @@index([organizationId])
+}
+
+// One planned tool call. requiresApproval is set server-side from the tool
+// registry at plan time (never trusted from the AI's output). A step whose
+// tool is paid cannot execute until a human approves it -- for
+// "launch_ad_campaign" specifically, approving the step is what creates the
+// real AdApproval row Phase 6's launchAdCampaign() independently requires,
+// so there is no separate bypass path.
+model AgentStep {
+  id               String   @id @default(cuid())
+  agentTaskId      String
+  order            Int
+  toolName         String
+  toolInput        Json
+  reason           String?
+  requiresApproval Boolean  @default(false)
+  status           String   @default("pending") // pending | approved | completed | failed
+  result           Json?
+  failureReason    String?
+  approvedByUserId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  agentTask AgentTask @relation(fields: [agentTaskId], references: [id], onDelete: Cascade)
+
+  @@index([agentTaskId])
 }
 
 // ---------- Platform ----------

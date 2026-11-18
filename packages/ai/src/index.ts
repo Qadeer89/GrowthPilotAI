@@ -5,3 +5,4 @@ export * from "./content";
 export * from "./image";
 export * from "./speech";
 export * from "./video";
+export * from "./agent-planner";

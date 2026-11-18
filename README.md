@@ -8,7 +8,8 @@ API connector — no shared database, auth, or deployment).
 
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
 Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing),
-Phase 5 (Email Marketing & CRM), and Phase 6 (Paid Advertising) are done.
+Phase 5 (Email Marketing & CRM), Phase 6 (Paid Advertising), and Phase 7
+(Autonomous Marketing Agent) are done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -131,6 +132,44 @@ hierarchy (free, but a separate account Google requires creating manually) or
 an approved "Basic/Standard" developer token access level for the production
 account.
 
+Phase 7: Autonomous Marketing Agent. A natural-language request is turned into a
+structured plan (`packages/ai/src/agent-planner.ts`, zod-validated JSON) of tool
+calls, but the AI never decides which tools exist or which require approval —
+`TOOL_REGISTRY` in `packages/core/src/agent.ts` is the sole source of truth for
+both, looked up server-side for every step regardless of what the model's own
+output claims. Steps pass data to each other through a `findPriorResult` lookup
+by tool name rather than the AI ever handling a real database ID it could
+hallucinate. Four tools: `draft_content`, `create_landing_page`,
+`draft_ad_campaign`, and `launch_ad_campaign` — the last one reuses Phase 6's
+`launchAdCampaign`/`approveAdCampaign` unchanged, so there is exactly one
+ad-launch approval gate in the system, not a separate one per entry point.
+`executeAgentTask` runs steps in order, stops the whole task at
+`awaiting_approval` on the first step that needs it, and stops on a real tool
+failure rather than ever fabricating a completed result. RankPilot's own
+connector is descoped from this phase, same reasoning as Meta Ads in Phase 6:
+`docs/05-provider-requirements.md` says which APIs RankPilot exposes has not
+been confirmed yet, so there is nothing real to build against.
+
+Verified: the full `packages/core` suite (9/9, including
+`agent-execution.test.ts`'s two tests — a real multi-step organic plan whose
+resulting `ContentItem`/`LandingPage` rows are confirmed in the database, not
+just in the step result, and a paid step that is proven to create no
+`AdApproval` row and reach no provider call until approved) passes against a
+real dev database, no mocks. Verified again live in the browser with the real
+AI planner (not the deterministic test harness): a first real request surfaced
+an actual planner bug — the model returned `contentType: "social post"` with a
+space instead of the registry's `"social_post"` — which `draft_content` now
+normalizes (lower-cased, hyphens/spaces to underscores) before validating
+against the exact registry list, rather than trusting the model's formatting;
+a second real request then completed end-to-end (`draft_content` +
+`create_landing_page` both `Completed`, backed by real rows); a third real
+request, "Launch a $5/day Google ad campaign," correctly stopped at
+`Awaiting Approval` with `launch_ad_campaign` `Pending` and no Google Ads call
+made. Clicking "Approve & continue" itself was blocked by Claude Code's own
+safety classifier as a paid/destructive action — left for the user to click —
+which is itself a second, independent confirmation that the gate is a real
+stop and not just a UI label.
+
 ## Next step
 
-Phase 7 (Autonomous Marketing Agent).
+Phase 8 (Analytics & Intelligence).
