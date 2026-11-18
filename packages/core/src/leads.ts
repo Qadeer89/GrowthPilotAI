@@ -3,6 +3,7 @@ import { requireMembership, requirePermission } from "./rbac";
 import { PERMISSIONS } from "./permissions";
 import { writeAuditLog } from "./audit";
 import { NotFoundError, ValidationError } from "./errors";
+import { checkRateLimit } from "./rate-limit";
 
 function slugify(name: string): string {
   return name
@@ -98,6 +99,12 @@ export async function submitLeadForm(input: {
 
   const email = input.email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ValidationError("A valid email is required");
+
+  // This is a public, unauthenticated endpoint -- there's no login to lean
+  // on for abuse protection, so it gets its own limits: a handful of
+  // submissions per page overall, and far fewer from any one email.
+  checkRateLimit(`lead:page:${page.id}`, 30, 60 * 60 * 1000);
+  checkRateLimit(`lead:email:${page.id}:${email}`, 3, 60 * 60 * 1000);
 
   return prisma.lead.create({
     data: {

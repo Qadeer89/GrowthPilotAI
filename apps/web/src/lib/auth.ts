@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 // middleware for session checks, and the @growthpilot/core barrel now pulls
 // in Node-only code (Prisma, the OpenAI SDK) that Edge can't bundle.
 import { verifyUserPassword } from "@growthpilot/core/src/users";
+import { checkRateLimit } from "@growthpilot/core/src/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -18,6 +19,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = credentials?.email;
         const password = credentials?.password;
         if (typeof email !== "string" || typeof password !== "string") return null;
+
+        // No account-lockout UI exists, so a failed attempt and a rate-limit
+        // both return null -- the goal is slowing down brute force, not
+        // telling an attacker which email exists.
+        try {
+          checkRateLimit(`login:${email.trim().toLowerCase()}`, 5, 15 * 60 * 1000);
+        } catch {
+          return null;
+        }
 
         const user = await verifyUserPassword(email, password);
         if (!user) return null;

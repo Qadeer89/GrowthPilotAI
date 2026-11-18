@@ -9,8 +9,9 @@ API connector — no shared database, auth, or deployment).
 Phase 0 (architecture/plan), Phase 1 (platform foundation), Phase 2 (AI Marketing
 Foundation), Phase 3 (Creative Studio), Phase 4 (Campaign & Social Publishing),
 Phase 5 (Email Marketing & CRM), Phase 6 (Paid Advertising), Phase 7
-(Autonomous Marketing Agent), Phase 8 (Analytics & Intelligence), and Phase 9
-(RankPilot Internal Launch) are done.
+(Autonomous Marketing Agent), Phase 8 (Analytics & Intelligence), Phase 9
+(RankPilot Internal Launch), and Phase 10 (SaaS Production Readiness) are
+done.
 
 Phase 1: auth, orgs, workspaces, RBAC with 6 system roles, tenant isolation (enforced
 server-side and covered by an acceptance test), a dashboard shell, brand onboarding,
@@ -249,6 +250,32 @@ Section 21 end-to-end run, real providers, no mocks:
   RankPilot's side, so no connector exists to call it. Nothing in this app
   depends on it.
 
+Phase 10: SaaS Production Readiness. Full details in
+[docs/06-deployment-runbook.md](docs/06-deployment-runbook.md). Security
+audit found and fixed one real gap: neither the public lead-capture form
+nor login had any rate limiting, so either could be scripted for spam or
+brute force with no login to rely on for protection -- added an in-process
+rate limiter (`packages/core/src/rate-limit.ts`, tested, verified live: a
+4th real browser submission from the same email was correctly rejected).
+Everything else audited clean: no raw SQL anywhere, bcrypt password hashing,
+no secrets committed, webhook signatures verified, OAuth state-cookie CSRF
+checks in place, and RBAC enforced on every tenant-scoped function except
+the ones legitimately public by design. Added a real health-check endpoint
+(`GET /api/health`, does an actual `SELECT 1` against Postgres). Billing
+readiness: no payment provider is wired anywhere (confirmed by grep), per
+spec -- that needs separate explicit approval -- but real usage metering
+(`UsageRecord`) has existed since Phase 1. Backup/recovery: Postgres is
+Neon-managed (automatic backups/PITR already part of the plan); local
+creative-asset files on the VPS are not yet backed up off-box. A
+dependency-free load test against the real local dev server's health
+endpoint got 320/320 successful requests at ~30 req/s (dev mode, not a
+production-build claim). The runbook documents PM2 + Nginx + a
+`bugsnap-ai.com` subdomain, but actually deploying needs VPS SSH access and
+DNS control this session doesn't have -- that, a separate production Neon
+database, and updated OAuth redirect URIs are the real remaining blockers,
+not code.
+
 ## Next step
 
-Phase 10 (SaaS Production Readiness).
+Actual deployment to the VPS, once SSH/DNS access is available -- otherwise
+all ten phases of the implementation plan are complete.

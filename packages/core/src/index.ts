@@ -20,3 +20,4 @@ export * from "./ads";
 export * from "./agent";
 export * from "./analytics";
 export * from "./optimization";
+export * from "./rate-limit";
