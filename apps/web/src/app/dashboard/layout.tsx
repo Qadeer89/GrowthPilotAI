@@ -1,29 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { getPrimaryOrganizationForUser } from "@growthpilot/core";
-
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview", enabled: true },
-  { href: "/dashboard/brand", label: "Brand Settings", enabled: true },
-  { href: "/dashboard/team", label: "Team & Permissions", enabled: true },
-  { href: "/dashboard/ai-agent", label: "AI Marketing Agent", enabled: true },
-  { href: "/dashboard/strategy", label: "Strategy & Research", enabled: true },
-  { href: "/dashboard/content", label: "Content Studio", enabled: true },
-  { href: "/dashboard/creative", label: "Creative & Video Studio", enabled: true },
-  { href: "/dashboard/campaigns", label: "Campaigns", enabled: true },
-  { href: "#", label: "Calendar", enabled: false },
-  { href: "/dashboard/social-accounts", label: "Social Accounts", enabled: true },
-  { href: "/dashboard/email", label: "Email Marketing", enabled: true },
-  { href: "/dashboard/paid-ads", label: "Paid Advertising", enabled: true },
-  { href: "/dashboard/leads", label: "Leads & CRM", enabled: true },
-  { href: "/dashboard/landing-pages", label: "Landing Pages", enabled: true },
-  { href: "/dashboard/analytics", label: "Analytics", enabled: true },
-  { href: "/dashboard/analytics", label: "AI Recommendations", enabled: true },
-  { href: "#", label: "Integrations", enabled: false },
-  { href: "#", label: "Automation Rules", enabled: false },
-  { href: "#", label: "Usage & Billing", enabled: false },
-];
+import { SidebarNav } from "./SidebarNav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -33,47 +11,49 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!context) redirect("/signup");
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-4 py-6">
-        <div className="mb-6 flex items-start justify-between px-2">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">{context.organization.name}</p>
-            <p className="text-xs text-slate-500">{context.role.name}</p>
+    <div className="flex min-h-screen bg-[var(--color-bg)]">
+      <aside className="flex w-64 flex-shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="flex items-center gap-2 px-5 py-5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-primary)] text-sm font-bold text-[var(--color-primary-foreground)]">
+            G
+          </span>
+          <span className="text-sm font-semibold tracking-tight text-[var(--color-text)]">
+            GrowthPilot AI
+          </span>
+        </div>
+
+        <div className="mx-3 mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[var(--color-text)]">
+              {context.organization.name}
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)]">{context.role.name}</p>
           </div>
+        </div>
+
+        <SidebarNav />
+
+        <div className="border-t border-[var(--color-border)] px-3 py-3">
           <form
             action={async () => {
               "use server";
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button className="text-xs text-slate-500 hover:text-slate-900 hover:underline">
-              Log out
-            </button>
+            <button className="gp-btn-ghost w-full justify-start">Log out</button>
           </form>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) =>
-            item.enabled ? (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-              >
-                {item.label}
-              </Link>
-            ) : (
-              <span
-                key={item.label}
-                title="Not built yet"
-                className="rounded-md px-3 py-1.5 text-sm text-slate-400"
-              >
-                {item.label}
-              </span>
-            ),
-          )}
-        </nav>
       </aside>
-      <main className="flex-1 px-8 py-8">{children}</main>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-8 py-3">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Signed in as <span className="text-[var(--color-text)]">{session.user.email}</span>
+          </p>
+          <span className="gp-badge-primary">{context.role.name}</span>
+        </header>
+        <main className="flex-1 px-8 py-8">{children}</main>
+      </div>
     </div>
   );
 }

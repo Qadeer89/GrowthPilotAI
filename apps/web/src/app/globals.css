@@ -1,26 +1,127 @@
 @import "tailwindcss";
 
+/*
+ * Growth Marketing design system.
+ * Independent identity: warm white canvas, deep charcoal text, electric
+ * coral as the primary action color, muted teal as the secondary accent.
+ * Deliberately NOT RankPilot's navy/violet/lime palette.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #faf8f5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f3ede2;
+  --color-border: #e7e0d4;
+  --color-border-strong: #d8cfbf;
+
+  --color-text: #221f1c;
+  --color-text-muted: #726a5e;
+  --color-text-faint: #a39a8c;
+
+  --color-primary: #ff5a36;
+  --color-primary-hover: #e94a28;
+  --color-primary-soft: #ffe7dd;
+  --color-primary-foreground: #fffaf7;
+
+  --color-secondary: #0f7e82;
+  --color-secondary-hover: #0c666a;
+  --color-secondary-soft: #e0f1f1;
+  --color-secondary-foreground: #ffffff;
+
+  --color-success: #1e8e5a;
+  --color-success-soft: #e3f4ea;
+  --color-warning: #b4740e;
+  --color-warning-soft: #faf0dc;
+  --color-danger: #c6392f;
+  --color-danger-soft: #fbe9e7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-alt: var(--color-surface-alt);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-faint: var(--color-text-faint);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-secondary-soft: var(--color-secondary-soft);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .gp-card {
+    @apply rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_rgba(34,31,28,0.04)];
+  }
+
+  .gp-page-title {
+    @apply text-xl font-semibold tracking-tight text-[var(--color-text)];
+  }
+
+  .gp-page-subtitle {
+    @apply mt-1 text-sm text-[var(--color-text-muted)];
+  }
+
+  .gp-section-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-[var(--color-text-faint)];
+  }
+
+  .gp-btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)];
+  }
+
+  .gp-btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-alt)];
+  }
+
+  .gp-btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)];
+  }
+
+  .gp-input {
+    @apply w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-soft)];
+  }
+
+  .gp-badge-neutral {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-muted)];
+  }
+
+  .gp-badge-success {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-[var(--color-success-soft)] text-[var(--color-success)];
+  }
+
+  .gp-badge-warning {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-[var(--color-warning-soft)] text-[var(--color-warning)];
+  }
+
+  .gp-badge-danger {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-[var(--color-danger-soft)] text-[var(--color-danger)];
+  }
+
+  .gp-badge-primary {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-[var(--color-primary-soft)] text-[var(--color-primary)];
+  }
+
+  .gp-empty-state {
+    @apply rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col items-center justify-center gap-1 px-6 py-10 text-center;
+  }
 }
