@@ -35,7 +35,7 @@ export default async function AnalyticsPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Analytics & Intelligence</h1>
+        <h1 className="gp-page-title">Analytics & Intelligence</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -55,8 +55,8 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Analytics & Intelligence</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Analytics & Intelligence</h1>
+      <p className="gp-page-subtitle">
         Every number below carries a data_quality label. A channel with no real data yet is shown as missing, never
         estimated or guessed.
       </p>

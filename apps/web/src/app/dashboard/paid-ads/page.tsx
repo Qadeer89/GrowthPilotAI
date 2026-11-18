@@ -40,7 +40,7 @@ export default async function PaidAdsPage({
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Paid Advertising</h1>
+        <h1 className="gp-page-title">Paid Advertising</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -61,8 +61,8 @@ export default async function PaidAdsPage({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Paid Advertising</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Paid Advertising</h1>
+      <p className="gp-page-subtitle">
         Draft a Google Ads campaign, get it approved, then launch it for real. A campaign cannot launch without an
         approval record, and every launched campaign can be paused as an emergency stop.
       </p>

@@ -19,7 +19,7 @@ export default async function ContentPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Content Studio</h1>
+        <h1 className="gp-page-title">Content Studio</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -36,7 +36,7 @@ export default async function ContentPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Content Studio</h1>
+      <h1 className="gp-page-title">Content Studio</h1>
 
       <section className="mt-6 gp-card p-6">
         <ContentGenerateForm brands={brands.map((b) => ({ id: b.id, name: b.name }))} />

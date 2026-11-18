@@ -29,7 +29,7 @@ export default async function AiAgentPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">AI Marketing Agent</h1>
+        <h1 className="gp-page-title">AI Marketing Agent</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -45,8 +45,8 @@ export default async function AiAgentPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">AI Marketing Agent</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">AI Marketing Agent</h1>
+      <p className="gp-page-subtitle">
         Describe what you want done. The agent plans it as a sequence of real tool calls, runs anything organic
         immediately, and stops for your approval before anything that spends money.
       </p>

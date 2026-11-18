@@ -18,7 +18,7 @@ export default async function StrategyPage({
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Strategy & Research</h1>
+        <h1 className="gp-page-title">Strategy & Research</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -35,7 +35,7 @@ export default async function StrategyPage({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Strategy & Research</h1>
+      <h1 className="gp-page-title">Strategy & Research</h1>
 
       <div className="mt-4 flex gap-2">
         {brands.map((b) => (

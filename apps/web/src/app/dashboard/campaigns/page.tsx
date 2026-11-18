@@ -27,7 +27,7 @@ export default async function CampaignsPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Campaigns</h1>
+        <h1 className="gp-page-title">Campaigns</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -49,8 +49,8 @@ export default async function CampaignsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Campaigns</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Campaigns</h1>
+      <p className="gp-page-subtitle">
         Create a campaign, then publish a real post through a connected account.{" "}
         <Link href="/dashboard/social-accounts" className="text-[var(--color-primary)] hover:underline">
           Manage connected accounts

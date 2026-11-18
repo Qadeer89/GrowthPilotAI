@@ -21,8 +21,8 @@ export default async function EmailPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Email Marketing</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Email Marketing</h1>
+      <p className="gp-page-subtitle">
         Sends go through Resend. Bounces and spam complaints automatically suppress the address for future sends.
       </p>
 

@@ -14,8 +14,8 @@ export default async function BrandPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Brand Settings</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Brand Settings</h1>
+      <p className="gp-page-subtitle">
         This captures brand details only. AI-assisted strategy generation from this
         profile ships in Phase 2.
       </p>

@@ -14,7 +14,7 @@ export default async function LandingPagesPage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Landing Pages</h1>
+        <h1 className="gp-page-title">Landing Pages</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -30,8 +30,8 @@ export default async function LandingPagesPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Landing Pages</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">Each page is public at /p/{orgSlug}/&lt;slug&gt; and captures leads into the pipeline.</p>
+      <h1 className="gp-page-title">Landing Pages</h1>
+      <p className="gp-page-subtitle">Each page is public at /p/{orgSlug}/&lt;slug&gt; and captures leads into the pipeline.</p>
 
       <section className="mt-6 gp-card p-6">
         <h2 className="text-sm font-semibold text-[var(--color-text)]">New landing page</h2>

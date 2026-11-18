@@ -14,7 +14,7 @@ export default async function CreativePage() {
   if (brands.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Creative & Video Studio</h1>
+        <h1 className="gp-page-title">Creative & Video Studio</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Add a brand first.{" "}
           <Link href="/dashboard/brand" className="text-[var(--color-primary)] hover:underline">
@@ -30,8 +30,8 @@ export default async function CreativePage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Creative & Video Studio</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Creative & Video Studio</h1>
+      <p className="gp-page-subtitle">
         Concept → script → storyboard → images → voiceover → rendered video, end to end.
       </p>
 

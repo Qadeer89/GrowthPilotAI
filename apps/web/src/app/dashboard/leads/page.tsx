@@ -9,8 +9,8 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Leads & CRM</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">Leads captured from landing pages land here.</p>
+      <h1 className="gp-page-title">Leads & CRM</h1>
+      <p className="gp-page-subtitle">Leads captured from landing pages land here.</p>
 
       <div className="mt-6 overflow-hidden gp-card">
         {leads.length === 0 ? (

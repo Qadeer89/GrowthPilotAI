@@ -20,7 +20,7 @@ export default async function TeamPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Team & Permissions</h1>
+      <h1 className="gp-page-title">Team & Permissions</h1>
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold text-[var(--color-text)]">Invite a teammate</h2>

@@ -20,8 +20,8 @@ export default async function SocialAccountsPage({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--color-text)]">Social Accounts</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+      <h1 className="gp-page-title">Social Accounts</h1>
+      <p className="gp-page-subtitle">
         Connect a real account to publish real posts through the provider&apos;s own API.
       </p>
 
