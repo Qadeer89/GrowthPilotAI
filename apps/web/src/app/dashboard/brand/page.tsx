@@ -16,8 +16,8 @@ export default async function BrandPage() {
     <div>
       <h1 className="gp-page-title">Brand Settings</h1>
       <p className="gp-page-subtitle">
-        This captures brand details only. AI-assisted strategy generation from this
-        profile ships in Phase 2.
+        These details power AI-generated strategy, content, and creative across
+        GrowthPilot AI &mdash; keep them accurate for best results.
       </p>
 
       <section className="mt-6 gp-card p-6">
