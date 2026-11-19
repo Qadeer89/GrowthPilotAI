@@ -7,6 +7,9 @@ import { PERMISSIONS } from "./permissions";
 import { recordUsage } from "./usage";
 import { writeAuditLog } from "./audit";
 import { NotFoundError } from "./errors";
+import { publishSocialPost } from "./integrations";
+
+const SOCIAL_PROVIDERS = ["linkedin", "facebook", "x"] as const;
 
 async function loadBrandBrief(organizationId: string, brandId: string) {
   const brand = await prisma.brand.findFirst({ where: { id: brandId, organizationId } });
@@ -159,13 +162,70 @@ async function decideContentItem(input: {
   return item;
 }
 
+export type AutoPublishResult = {
+  attempted: number;
+  published: { provider: string; account: string; postUrl: string }[];
+  failed: { provider: string; account: string; reason: string }[];
+};
+
+/**
+ * Approving a social_post item auto-publishes it to every connected account
+ * for its platform (e.g. every connected Facebook Page). A platform with no
+ * connected account, or a non-social content type, is a no-op, not an
+ * error -- approval itself always succeeds regardless of publish outcome.
+ */
+async function autoPublishApprovedItem(
+  item: { organizationId: string; id: string; contentType: string; platform: string | null; body: string },
+  actorUserId: string,
+): Promise<AutoPublishResult | null> {
+  if (item.contentType !== "social_post" || !item.platform) return null;
+  const provider = item.platform.toLowerCase();
+  if (!SOCIAL_PROVIDERS.includes(provider as (typeof SOCIAL_PROVIDERS)[number])) return null;
+
+  const accounts = await prisma.connectedAccount.findMany({
+    where: { organizationId: item.organizationId, provider, status: "connected" },
+  });
+  if (accounts.length === 0) return null;
+
+  const result: AutoPublishResult = { attempted: accounts.length, published: [], failed: [] };
+
+  for (const account of accounts) {
+    try {
+      const post = await publishSocialPost({
+        organizationId: item.organizationId,
+        connectedAccountId: account.id,
+        body: item.body,
+        actorUserId,
+      });
+      result.published.push({
+        provider,
+        account: account.displayName ?? account.providerAccountId,
+        postUrl: post.providerPostUrl ?? "",
+      });
+    } catch (err) {
+      result.failed.push({
+        provider,
+        account: account.displayName ?? account.providerAccountId,
+        reason: err instanceof Error ? err.message : "Publish failed",
+      });
+    }
+  }
+
+  return result;
+}
+
 export async function approveContentItem(input: {
   organizationId: string;
   contentItemId: string;
   actorUserId: string;
   note?: string;
 }) {
-  return decideContentItem({ ...input, status: "approved" });
+  const item = await decideContentItem({ ...input, status: "approved" });
+  const publishResult = await autoPublishApprovedItem(
+    { organizationId: input.organizationId, id: item.id, contentType: item.contentType, platform: item.platform, body: item.body },
+    input.actorUserId,
+  );
+  return { item, publishResult };
 }
 
 export async function rejectContentItem(input: {

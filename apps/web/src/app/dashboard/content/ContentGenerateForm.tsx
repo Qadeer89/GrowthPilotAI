@@ -11,6 +11,13 @@ const CONTENT_TYPE_OPTIONS = [
   { value: "landing_page_copy", label: "Landing page copy" },
 ];
 
+const PLATFORM_OPTIONS = [
+  { value: "", label: "None" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "facebook", label: "Facebook" },
+  { value: "x", label: "X (Twitter)" },
+];
+
 export function ContentGenerateForm({ brands }: { brands: { id: string; name: string }[] }) {
   const [state, formAction, pending] = useActionState<GenerateContentResult, FormData>(
     generateContentAction,
@@ -41,7 +48,16 @@ export function ContentGenerateForm({ brands }: { brands: { id: string; name: st
         </select>
       </label>
 
-      <Field label="Platform (optional)" name="platform" />
+      <label className="flex flex-col gap-1 text-sm text-[var(--color-text)]">
+        Platform
+        <select name="platform" className={inputClass} defaultValue="">
+          {PLATFORM_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <Field label="Audience (optional)" name="audience" />
       <Field label="Tone (optional)" name="tone" />
       <Field label="Keywords (optional)" name="keywords" />

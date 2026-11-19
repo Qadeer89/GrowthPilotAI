@@ -9,7 +9,12 @@ import {
 import { ContentGenerateForm } from "./ContentGenerateForm";
 import { ContentItemCard } from "./ContentItemCard";
 
-export default async function ContentPage() {
+export default async function ContentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ published?: string; failed?: string }>;
+}) {
+  const { published, failed } = await searchParams;
   const session = await auth();
   const context = await getPrimaryOrganizationForUser(session!.user.id);
   const organizationId = context!.organization.id;
@@ -37,6 +42,26 @@ export default async function ContentPage() {
   return (
     <div>
       <h1 className="gp-page-title">Content Studio</h1>
+
+      {(published !== undefined || failed !== undefined) && (
+        <p className="mt-3 text-sm">
+          {Number(published) > 0 && (
+            <span className="text-[var(--color-success)]">
+              Published to {published} connected account{Number(published) === 1 ? "" : "s"}.
+            </span>
+          )}
+          {Number(failed) > 0 && (
+            <span className="ml-2 text-[var(--color-danger)]">
+              {failed} publish attempt{Number(failed) === 1 ? "" : "s"} failed.
+            </span>
+          )}
+          {Number(published) === 0 && Number(failed) === 0 && (
+            <span className="text-[var(--color-text-muted)]">
+              Approved. No connected account for this platform yet.
+            </span>
+          )}
+        </p>
+      )}
 
       <section className="mt-6 gp-card p-6">
         <ContentGenerateForm brands={brands.map((b) => ({ id: b.id, name: b.name }))} />

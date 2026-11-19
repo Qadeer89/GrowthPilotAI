@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import {
   approveContentItem,
@@ -83,13 +84,21 @@ export async function approveContentAction(formData: FormData) {
   const contentItemId = String(formData.get("contentItemId") ?? "");
   if (!contentItemId) return;
 
-  await approveContentItem({
+  const { publishResult } = await approveContentItem({
     organizationId: context.organization.id,
     contentItemId,
     actorUserId: session.user.id,
   });
 
   revalidatePath("/dashboard/content");
+
+  if (publishResult) {
+    const params = new URLSearchParams({
+      published: String(publishResult.published.length),
+      failed: String(publishResult.failed.length),
+    });
+    redirect(`/dashboard/content?${params.toString()}`);
+  }
 }
 
 export async function rejectContentAction(formData: FormData) {
