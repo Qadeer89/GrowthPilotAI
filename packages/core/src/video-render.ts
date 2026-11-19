@@ -10,7 +10,36 @@ const execFileAsync = promisify(execFile);
 // with Windows absolute paths ("C:\..."). Every file this module hands to
 // ffmpeg is copied into one working directory first and referenced by a
 // plain relative filename (via `cwd`) so none of that escaping is needed.
-const CAPTION_FONT_FILE = process.env.CREATIVE_CAPTION_FONT ?? "C:\\Windows\\Fonts\\arial.ttf";
+//
+// No single font path exists on every OS, so this picks the first candidate
+// that's actually present rather than hardcoding one platform's path.
+const CAPTION_FONT_CANDIDATES = [
+  process.env.CREATIVE_CAPTION_FONT,
+  "C:\\Windows\\Fonts\\arial.ttf",
+  "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+  "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+  "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+].filter((p): p is string => Boolean(p));
+
+let cachedCaptionFont: string | undefined;
+
+async function resolveCaptionFont(): Promise<string> {
+  if (cachedCaptionFont) return cachedCaptionFont;
+  for (const candidate of CAPTION_FONT_CANDIDATES) {
+    try {
+      await fs.access(candidate);
+      cachedCaptionFont = candidate;
+      return candidate;
+    } catch {
+      // try the next candidate
+    }
+  }
+  throw new Error(
+    "No caption font found. Set CREATIVE_CAPTION_FONT to a .ttf path, or install one " +
+      "(e.g. `apt install fonts-dejavu-core` on the server).",
+  );
+}
 
 function wrapCaption(text: string, maxLineLength = 42, maxLines = 3): string {
   const words = text.split(/\s+/).filter(Boolean);
@@ -123,7 +152,7 @@ export async function assembleVideo(scenes: RenderScene[]): Promise<RenderedVide
 
   try {
     const fontFile = "caption-font.ttf";
-    await fs.copyFile(CAPTION_FONT_FILE, path.join(workDir, fontFile));
+    await fs.copyFile(await resolveCaptionFont(), path.join(workDir, fontFile));
 
     const sceneDurations: { order: number; durationSeconds: number }[] = [];
     const clipFiles: string[] = [];
