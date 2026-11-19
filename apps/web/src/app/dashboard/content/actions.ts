@@ -7,10 +7,19 @@ import {
   approveContentItem,
   generateAndSaveContentDraft,
   getPrimaryOrganizationForUser,
+  listConnectedAccounts,
   rejectContentItem,
   updateContentItemBody,
   type ContentType,
 } from "@growthpilot/core";
+
+const PLATFORM_PRIORITY = ["linkedin", "facebook", "x"] as const;
+
+async function defaultSocialPlatform(organizationId: string, actorUserId: string): Promise<string | undefined> {
+  const accounts = await listConnectedAccounts(organizationId, actorUserId);
+  const connected = new Set(accounts.filter((a) => a.status === "connected").map((a) => a.provider));
+  return PLATFORM_PRIORITY.find((p) => connected.has(p));
+}
 
 export type GenerateContentResult = { error: string } | undefined;
 
@@ -32,13 +41,17 @@ export async function generateContentAction(
     return { error: "Brand, content type, and topic/brief are required." };
   }
 
+  const platform =
+    String(formData.get("platform") ?? "") ||
+    (contentType === "social_post" ? await defaultSocialPlatform(context.organization.id, session.user.id) : undefined);
+
   try {
     await generateAndSaveContentDraft({
       organizationId: context.organization.id,
       brandId,
       actorUserId: session.user.id,
       contentType,
-      platform: String(formData.get("platform") ?? "") || undefined,
+      platform,
       audience: String(formData.get("audience") ?? "") || undefined,
       tone: String(formData.get("tone") ?? "") || undefined,
       topic,
