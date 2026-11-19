@@ -1,0 +1,111 @@
+import crypto from "node:crypto";
+
+// X (Twitter) connector -- the only place this codebase talks to the X API
+// directly. OAuth 2.0 Authorization Code flow with PKCE + the v2 Tweets
+// endpoint, verified against X's current developer docs before writing
+// this, not guessed.
+const AUTH_BASE = "https://x.com/i/oauth2/authorize";
+const TOKEN_URL = "https://api.x.com/2/oauth2/token";
+const API_BASE = "https://api.x.com/2";
+
+type XConfig = { clientId: string; clientSecret: string; redirectUri: string };
+
+function config(): XConfig {
+  const clientId = process.env.X_CLIENT_ID;
+  const clientSecret = process.env.X_CLIENT_SECRET;
+  const redirectUri = process.env.X_REDIRECT_URI ?? "http://localhost:3000/api/auth/x/callback";
+  if (!clientId || !clientSecret) {
+    throw new Error("X_CLIENT_ID/X_CLIENT_SECRET are not configured in apps/web/.env.local");
+  }
+  return { clientId, clientSecret, redirectUri };
+}
+
+function base64url(input: Buffer): string {
+  return input.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function createPkcePair(): { codeVerifier: string; codeChallenge: string } {
+  const codeVerifier = base64url(crypto.randomBytes(32));
+  const codeChallenge = base64url(crypto.createHash("sha256").update(codeVerifier).digest());
+  return { codeVerifier, codeChallenge };
+}
+
+export function buildXAuthorizationUrl(state: string, codeChallenge: string): string {
+  const { clientId, redirectUri } = config();
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    // offline.access requests a refresh token; not used yet (no refresh
+    // flow implemented), but keeps the door open without a reconnect flow.
+    scope: "tweet.read tweet.write users.read offline.access",
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+  return `${AUTH_BASE}?${params.toString()}`;
+}
+
+export type XTokenResult = { accessToken: string; expiresInSeconds: number; scope: string };
+
+export async function exchangeXCode(code: string, codeVerifier: string): Promise<XTokenResult> {
+  const { clientId, clientSecret, redirectUri } = config();
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    code_verifier: codeVerifier,
+  });
+
+  const response = await fetch(TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`X token exchange failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { access_token: string; expires_in: number; scope: string };
+  return { accessToken: data.access_token, expiresInSeconds: data.expires_in, scope: data.scope };
+}
+
+export type XIdentity = { userId: string; username: string };
+
+export async function fetchXIdentity(accessToken: string): Promise<XIdentity> {
+  const response = await fetch(`${API_BASE}/users/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(`X users/me failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { data: { id: string; username: string } };
+  return { userId: data.data.id, username: data.data.username };
+}
+
+export type XPublishResult = { tweetId: string; postUrl: string };
+
+export async function publishXPost(input: { accessToken: string; username: string; text: string }): Promise<XPublishResult> {
+  const response = await fetch(`${API_BASE}/tweets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: input.text }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`X post failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { data: { id: string } };
+  return { tweetId: data.data.id, postUrl: `https://x.com/${input.username}/status/${data.data.id}` };
+}

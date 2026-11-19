@@ -5,6 +5,13 @@ import {
   exchangeLinkedInCode,
   fetchLinkedInIdentity,
   publishLinkedInTextPost,
+  buildFacebookAuthorizationUrl,
+  listFacebookPages,
+  publishFacebookPagePost,
+  buildXAuthorizationUrl,
+  exchangeXCode,
+  fetchXIdentity,
+  publishXPost,
 } from "@growthpilot/integrations";
 import { requireMembership, requirePermission } from "./rbac";
 import { PERMISSIONS } from "./permissions";
@@ -14,6 +21,133 @@ import { encryptSecret, decryptSecret } from "./crypto";
 
 export function getLinkedInAuthorizationUrl(state: string): string {
   return buildLinkedInAuthorizationUrl(state);
+}
+
+export function getFacebookAuthorizationUrl(state: string): string {
+  return buildFacebookAuthorizationUrl(state);
+}
+
+export function getXAuthorizationUrl(state: string, codeChallenge: string): string {
+  return buildXAuthorizationUrl(state, codeChallenge);
+}
+
+// A Facebook user can manage multiple Pages; each Page becomes its own
+// ConnectedAccount (its own token, its own publish target) rather than
+// forcing a single-Page choice during connect.
+export async function connectFacebookPages(input: {
+  organizationId: string;
+  actorUserId: string;
+  code: string;
+}) {
+  await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.ORG_MANAGE_INTEGRATIONS);
+
+  const pages = await listFacebookPages(input.code);
+  if (pages.length === 0) {
+    throw new ConflictError("No Facebook Pages found for this account. You need to manage at least one Page.");
+  }
+
+  const accounts = [];
+  // Meta's long-lived Page tokens don't carry their own expiry; 60 days
+  // matches the practical lifetime of the long-lived user token they were
+  // minted from, after which reconnecting is the safe default.
+  const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+
+  for (const page of pages) {
+    const account = await prisma.connectedAccount.upsert({
+      where: {
+        organizationId_provider_providerAccountId: {
+          organizationId: input.organizationId,
+          provider: "facebook",
+          providerAccountId: page.pageId,
+        },
+      },
+      create: {
+        organizationId: input.organizationId,
+        provider: "facebook",
+        providerAccountId: page.pageId,
+        displayName: page.name,
+        status: "connected",
+        connectedByUserId: input.actorUserId,
+      },
+      update: { status: "connected", displayName: page.name },
+    });
+
+    await prisma.oAuthToken.upsert({
+      where: { connectedAccountId: account.id },
+      create: {
+        connectedAccountId: account.id,
+        accessTokenEncrypted: encryptSecret(page.accessToken),
+        scope: "pages_manage_posts",
+        expiresAt,
+      },
+      update: { accessTokenEncrypted: encryptSecret(page.accessToken), expiresAt },
+    });
+
+    await writeAuditLog({
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId,
+      action: "integration.connected",
+      targetType: "ConnectedAccount",
+      targetId: account.id,
+    });
+
+    accounts.push(account);
+  }
+
+  return accounts;
+}
+
+export async function connectXAccount(input: {
+  organizationId: string;
+  actorUserId: string;
+  code: string;
+  codeVerifier: string;
+}) {
+  await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.ORG_MANAGE_INTEGRATIONS);
+
+  const token = await exchangeXCode(input.code, input.codeVerifier);
+  const identity = await fetchXIdentity(token.accessToken);
+
+  const account = await prisma.connectedAccount.upsert({
+    where: {
+      organizationId_provider_providerAccountId: {
+        organizationId: input.organizationId,
+        provider: "x",
+        providerAccountId: identity.userId,
+      },
+    },
+    create: {
+      organizationId: input.organizationId,
+      provider: "x",
+      providerAccountId: identity.userId,
+      displayName: identity.username,
+      status: "connected",
+      connectedByUserId: input.actorUserId,
+    },
+    update: { status: "connected", displayName: identity.username },
+  });
+
+  const expiresAt = new Date(Date.now() + token.expiresInSeconds * 1000);
+  await prisma.oAuthToken.upsert({
+    where: { connectedAccountId: account.id },
+    create: {
+      connectedAccountId: account.id,
+      accessTokenEncrypted: encryptSecret(token.accessToken),
+      scope: token.scope,
+      expiresAt,
+    },
+    update: { accessTokenEncrypted: encryptSecret(token.accessToken), scope: token.scope, expiresAt },
+  });
+
+  await writeAuditLog({
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    action: "integration.connected",
+    targetType: "ConnectedAccount",
+    targetId: account.id,
+  });
+
+  return account;
 }
 
 export async function connectLinkedInAccount(input: {
@@ -100,9 +234,37 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-async function doPublish(account: { providerAccountId: string }, accessTokenEncrypted: string, text: string) {
+async function doPublish(
+  account: { provider: string; providerAccountId: string; displayName: string | null },
+  accessTokenEncrypted: string,
+  text: string,
+) {
   const accessToken = decryptSecret(accessTokenEncrypted);
-  return publishLinkedInTextPost({ accessToken, memberId: account.providerAccountId, text });
+
+  switch (account.provider) {
+    case "linkedin": {
+      const result = await publishLinkedInTextPost({ accessToken, memberId: account.providerAccountId, text });
+      return { postUrn: result.postUrn, postUrl: result.postUrl };
+    }
+    case "facebook": {
+      const result = await publishFacebookPagePost({
+        pageId: account.providerAccountId,
+        pageAccessToken: accessToken,
+        text,
+      });
+      return { postUrn: result.postId, postUrl: result.postUrl };
+    }
+    case "x": {
+      const result = await publishXPost({
+        accessToken,
+        username: account.displayName ?? account.providerAccountId,
+        text,
+      });
+      return { postUrn: result.tweetId, postUrl: result.postUrl };
+    }
+    default:
+      throw new Error(`Publishing isn't implemented for provider "${account.provider}"`);
+  }
 }
 
 export async function publishSocialPost(input: {

@@ -28,13 +28,16 @@ export default async function SocialAccountsPage({
       {connected && <p className="mt-3 text-sm text-[var(--color-success)]">Account connected.</p>}
       {error && <p className="mt-3 text-sm text-[var(--color-danger)]">Could not connect: {error}</p>}
 
-      <div className="mt-6">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- this is an API route (full navigation), not a page */}
-        <a
-          href="/api/auth/linkedin/start"
-          className="inline-block rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
-        >
+      <div className="mt-6 flex flex-wrap gap-3">
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- these are API routes (full navigation), not pages */}
+        <a href="/api/auth/linkedin/start" className="gp-btn-primary">
           Connect LinkedIn
+        </a>
+        <a href="/api/auth/facebook/start" className="gp-btn-primary">
+          Connect Facebook Page
+        </a>
+        <a href="/api/auth/x/start" className="gp-btn-primary">
+          Connect X
         </a>
       </div>
 
