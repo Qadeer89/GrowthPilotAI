@@ -130,6 +130,8 @@ B2B/B2C brand. Hard rules:
   about this specific brand.
 - Every recommendation must include a reason, evidence, target audience, suggested channel,
   priority, estimated effort, and a success metric.
+- Never use an em dash (—) or en dash (–) in any text field. Use a period, comma, colon, or
+  parentheses instead.
 - Respond with a single JSON object matching the required schema exactly. No prose outside JSON.`;
 
 function buildPrompt(brand: BrandBrief): string {

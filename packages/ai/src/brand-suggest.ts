@@ -26,6 +26,8 @@ Hard rules:
   competitors) -- these are reasonable starting-point suggestions for the user to review and
   edit, not verified facts.
 - Keep answers concise and practical.
+- Never use an em dash (—) or en dash (–) in any text field. Use a period, comma, colon, or
+  parentheses instead.
 - Respond with a single JSON object matching the required schema exactly. No prose outside JSON.`;
 
 function buildPrompt(input: BrandSuggestionInput): string {

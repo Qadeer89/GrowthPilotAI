@@ -25,8 +25,15 @@ Hard rules:
 - Only state product features, pricing, or results that were explicitly given to you about the
   brand. Never invent customer testimonials, reviews, case studies, or performance numbers.
 - Match the requested tone, audience, and content type exactly.
-- Output only the content itself — no preamble like "Here is your post", no markdown headers
-  unless the content type is a blog article (then normal markdown headings are fine).`;
+- Output only the content itself - no preamble like "Here is your post", no markdown headers
+  unless the content type is a blog article (then normal markdown headings are fine).
+- Never use an em dash (—) or en dash (–) anywhere in the output. Use a period, comma, colon, or
+  parentheses instead.
+- For social posts and ads: open with a concrete hook (a specific pain point, a sharp claim, or a
+  real number), not a generic greeting or a restated topic. Keep lines short. Use a line break
+  between ideas instead of long run-on sentences.
+- Vary structure and opening line across different generations for the same brand - do not reuse
+  the same opening phrase, sentence pattern, or paragraph order as a previous post on this topic.`;
 
 function buildPrompt(brand: BrandBrief, brief: ContentBrief): string {
   const lines = [
