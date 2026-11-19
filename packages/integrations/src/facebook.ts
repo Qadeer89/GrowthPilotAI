@@ -111,3 +111,25 @@ export async function publishFacebookPagePost(input: {
   const data = (await response.json()) as { id: string };
   return { postId: data.id, postUrl: `https://www.facebook.com/${data.id}` };
 }
+
+export async function publishFacebookPageVideo(input: {
+  pageId: string;
+  pageAccessToken: string;
+  fileBuffer: Buffer;
+  mimeType: string;
+  description?: string;
+}): Promise<FacebookPublishResult> {
+  const form = new FormData();
+  form.append("access_token", input.pageAccessToken);
+  if (input.description) form.append("description", input.description);
+  form.append("source", new Blob([new Uint8Array(input.fileBuffer)], { type: input.mimeType }), "video.mp4");
+
+  const response = await fetch(`${GRAPH_BASE}/${input.pageId}/videos`, { method: "POST", body: form });
+
+  if (!response.ok) {
+    throw new Error(`Facebook video upload failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { id: string };
+  return { postId: data.id, postUrl: `https://www.facebook.com/${data.id}` };
+}

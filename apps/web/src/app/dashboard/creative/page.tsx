@@ -4,7 +4,12 @@ import { getPrimaryOrganizationForUser, listBrands, listVideoProjects } from "@g
 import { NewVideoForm } from "./NewVideoForm";
 import { VideoProjectCard } from "./VideoProjectCard";
 
-export default async function CreativePage() {
+export default async function CreativePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ published?: string; failed?: string }>;
+}) {
+  const { published, failed } = await searchParams;
   const session = await auth();
   const context = await getPrimaryOrganizationForUser(session!.user.id);
   const organizationId = context!.organization.id;
@@ -34,6 +39,21 @@ export default async function CreativePage() {
       <p className="gp-page-subtitle">
         Concept → script → storyboard → images → voiceover → rendered video, end to end.
       </p>
+
+      {(published !== undefined || failed !== undefined) && (
+        <p className="mt-3 text-sm">
+          {Number(published) > 0 && (
+            <span className="text-[var(--color-success)]">
+              Published to {published} connected account{Number(published) === 1 ? "" : "s"}.
+            </span>
+          )}
+          {Number(failed) > 0 && (
+            <span className="ml-2 text-[var(--color-danger)]">
+              {failed} publish attempt{Number(failed) === 1 ? "" : "s"} failed.
+            </span>
+          )}
+        </p>
+      )}
 
       <section className="mt-6 gp-card p-6">
         <NewVideoForm brandId={brands[0].id} />

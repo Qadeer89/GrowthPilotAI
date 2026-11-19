@@ -342,6 +342,7 @@ model VideoProject {
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
   scenes VideoScene[]
+  socialPosts SocialPost[]
 
   @@index([organizationId])
   @@index([brandId])
@@ -437,6 +438,7 @@ model SocialPost {
   organizationId     String
   workspaceId        String?
   campaignId         String?
+  videoProjectId     String?
   connectedAccountId String
   provider           String // "linkedin"
   body               String
@@ -452,10 +454,12 @@ model SocialPost {
 
   organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   campaign         Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  videoProject     VideoProject?    @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
   connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([campaignId])
+  @@index([videoProjectId])
 }
 
 // One real send attempt through the provider. idempotencyKey means a retry

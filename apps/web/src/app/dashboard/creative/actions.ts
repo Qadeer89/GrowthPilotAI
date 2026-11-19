@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import {
   generateAndSaveVideoScript,
   generateVideoAssets,
   getPrimaryOrganizationForUser,
+  publishVideoProject,
   renderVideo,
 } from "@growthpilot/core";
 
@@ -81,4 +83,26 @@ export async function renderVideoAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard/creative");
+}
+
+export async function publishVideoAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) return;
+  const context = await getPrimaryOrganizationForUser(session.user.id);
+  if (!context) return;
+
+  const videoProjectId = String(formData.get("videoProjectId") ?? "");
+  if (!videoProjectId) return;
+
+  const results = await publishVideoProject({
+    organizationId: context.organization.id,
+    videoProjectId,
+    actorUserId: session.user.id,
+  });
+
+  revalidatePath("/dashboard/creative");
+
+  const published = results.filter((r) => r.status === "published").length;
+  const failed = results.filter((r) => r.status === "failed").length;
+  redirect(`/dashboard/creative?published=${published}&failed=${failed}`);
 }

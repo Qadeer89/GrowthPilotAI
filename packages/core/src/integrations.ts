@@ -8,6 +8,7 @@ import {
   buildFacebookAuthorizationUrl,
   listFacebookPages,
   publishFacebookPagePost,
+  publishFacebookPageVideo,
   buildXAuthorizationUrl,
   exchangeXCode,
   fetchXIdentity,
@@ -331,6 +332,97 @@ export async function publishSocialPost(input: {
     });
     throw err;
   }
+}
+
+async function doPublishVideo(
+  account: { provider: string; providerAccountId: string; displayName: string | null },
+  accessTokenEncrypted: string,
+  fileBuffer: Buffer,
+  mimeType: string,
+  description?: string,
+) {
+  switch (account.provider) {
+    case "facebook": {
+      const accessToken = decryptSecret(accessTokenEncrypted);
+      const result = await publishFacebookPageVideo({
+        pageId: account.providerAccountId,
+        pageAccessToken: accessToken,
+        fileBuffer,
+        mimeType,
+        description,
+      });
+      return { postUrn: result.postId, postUrl: result.postUrl };
+    }
+    default:
+      throw new Error(`Video publishing isn't implemented yet for "${account.provider}" (text posts work there today).`);
+  }
+}
+
+/**
+ * Publishes a rendered video to every connected account for the given
+ * organization. Each account is attempted independently -- one account's
+ * failure (including providers that don't support video yet) never blocks
+ * the others, so callers get a per-account result list rather than an
+ * all-or-nothing outcome.
+ */
+export async function publishSocialVideo(input: {
+  organizationId: string;
+  videoProjectId: string;
+  fileBuffer: Buffer;
+  mimeType: string;
+  description?: string;
+  actorUserId: string;
+}) {
+  await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.CONTENT_PUBLISH);
+
+  const accounts = await prisma.connectedAccount.findMany({
+    where: { organizationId: input.organizationId, status: "connected" },
+    include: { oauthToken: true },
+  });
+
+  const results: { provider: string; account: string; status: "published" | "failed"; postUrl?: string; reason?: string }[] = [];
+
+  for (const account of accounts) {
+    if (!account.oauthToken) continue;
+
+    const post = await prisma.socialPost.create({
+      data: {
+        organizationId: input.organizationId,
+        videoProjectId: input.videoProjectId,
+        connectedAccountId: account.id,
+        provider: account.provider,
+        body: input.description ?? "",
+        status: "publishing",
+        idempotencyKey: crypto.randomUUID(),
+        attempts: 1,
+        createdByUserId: input.actorUserId,
+      },
+    });
+
+    try {
+      const result = await doPublishVideo(account, account.oauthToken.accessTokenEncrypted, input.fileBuffer, input.mimeType, input.description);
+      await prisma.socialPost.update({
+        where: { id: post.id },
+        data: { status: "published", providerPostId: result.postUrn, providerPostUrl: result.postUrl },
+      });
+      results.push({ provider: account.provider, account: account.displayName ?? account.providerAccountId, status: "published", postUrl: result.postUrl });
+
+      await writeAuditLog({
+        organizationId: input.organizationId,
+        actorUserId: input.actorUserId,
+        action: "social.video_published",
+        targetType: "SocialPost",
+        targetId: post.id,
+        metadata: { provider: account.provider, providerPostId: result.postUrn },
+      });
+    } catch (err) {
+      const reason = errorMessage(err);
+      await prisma.socialPost.update({ where: { id: post.id }, data: { status: "failed", failureReason: reason } });
+      results.push({ provider: account.provider, account: account.displayName ?? account.providerAccountId, status: "failed", reason });
+    }
+  }
+
+  return results;
 }
 
 export async function retryPublishSocialPost(input: {

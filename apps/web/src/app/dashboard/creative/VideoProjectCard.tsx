@@ -1,4 +1,4 @@
-import { generateAssetsAction, renderVideoAction } from "./actions";
+import { generateAssetsAction, publishVideoAction, renderVideoAction } from "./actions";
 
 type Asset = {
   id: string;
@@ -51,6 +51,7 @@ export function VideoProjectCard({ project }: { project: Project }) {
   const statusColor = STATUS_COLOR[project.status] ?? "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]";
   const canGenerateAssets = project.status === "storyboard" || project.status === "failed";
   const canRender = project.status === "captions";
+  const canPublish = project.status === "rendered";
 
   return (
     <div className="gp-card p-4">
@@ -119,6 +120,14 @@ export function VideoProjectCard({ project }: { project: Project }) {
             <input type="hidden" name="videoProjectId" value={project.id} />
             <button className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500">
               Render video
+            </button>
+          </form>
+        )}
+        {canPublish && (
+          <form action={publishVideoAction}>
+            <input type="hidden" name="videoProjectId" value={project.id} />
+            <button className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500">
+              Publish to connected accounts
             </button>
           </form>
         )}

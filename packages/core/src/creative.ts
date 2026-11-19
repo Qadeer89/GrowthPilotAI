@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import { prisma, type Prisma } from "@growthpilot/db";
 import { generateImage, generateSpeech, generateVideoScript, type BrandBrief } from "@growthpilot/ai";
 import { requireMembership, requirePermission } from "./rbac";
@@ -6,6 +7,7 @@ import { writeAuditLog } from "./audit";
 import { NotFoundError, ConflictError } from "./errors";
 import { writeAssetFile, resolveAssetFile } from "./storage";
 import { assembleVideo } from "./video-render";
+import { publishSocialVideo } from "./integrations";
 
 async function loadBrand(organizationId: string, brandId: string) {
   const brand = await prisma.brand.findFirst({ where: { id: brandId, organizationId } });
@@ -329,4 +331,35 @@ export async function getCreativeAssetFile(organizationId: string, assetId: stri
     filePath: resolveAssetFile(organizationId, asset.storageKey),
     mimeType: asset.mimeType ?? "application/octet-stream",
   };
+}
+
+export async function publishVideoProject(input: {
+  organizationId: string;
+  videoProjectId: string;
+  actorUserId: string;
+}) {
+  const project = await prisma.videoProject.findFirst({
+    where: { id: input.videoProjectId, organizationId: input.organizationId },
+  });
+  if (!project) throw new NotFoundError("Video project not found in this organization");
+  if (project.status !== "rendered" || !project.finalVideoAssetId) {
+    throw new ConflictError("This video hasn't finished rendering yet.");
+  }
+
+  const asset = await prisma.creativeAsset.findFirst({
+    where: { id: project.finalVideoAssetId, organizationId: input.organizationId },
+  });
+  if (!asset?.storageKey) throw new NotFoundError("Rendered video file not found");
+
+  const filePath = resolveAssetFile(input.organizationId, asset.storageKey);
+  const fileBuffer = await fs.readFile(filePath);
+
+  return publishSocialVideo({
+    organizationId: input.organizationId,
+    videoProjectId: project.id,
+    fileBuffer,
+    mimeType: asset.mimeType ?? "video/mp4",
+    description: project.topic,
+    actorUserId: input.actorUserId,
+  });
 }
