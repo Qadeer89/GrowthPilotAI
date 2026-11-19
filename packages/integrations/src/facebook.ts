@@ -22,14 +22,19 @@ function config(): FacebookConfig {
 
 export function buildFacebookAuthorizationUrl(state: string): string {
   const { appId, redirectUri } = config();
+  const configId = process.env.FACEBOOK_CONFIG_ID;
+  if (!configId) {
+    throw new Error("FACEBOOK_CONFIG_ID is not configured in apps/web/.env.local");
+  }
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
     state,
     response_type: "code",
-    // pages_show_list lists the pages the user manages; the other two are
-    // required to read and publish to a Page's feed.
-    scope: "pages_show_list,pages_manage_posts,pages_read_engagement",
+    // This app uses Facebook Login for Business: permissions are bundled
+    // into a Configuration (created in the App Dashboard) rather than
+    // passed as a raw "scope" list.
+    config_id: configId,
   });
   return `${AUTH_BASE}?${params.toString()}`;
 }
