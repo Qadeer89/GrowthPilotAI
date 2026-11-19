@@ -2,13 +2,14 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { appUrl } from "@/lib/url";
 import { getGoogleAdsAuthorizationUrl } from "@growthpilot/core";
 
 const STATE_COOKIE = "ga_oauth_state";
 
-export async function GET(req: Request) {
+export async function GET() {
   const session = await auth();
-  if (!session?.user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!session?.user) return NextResponse.redirect(appUrl("/login"));
 
   const state = crypto.randomUUID();
   const cookieStore = await cookies();

@@ -1,16 +1,17 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { appUrl } from "@/lib/url";
 import { connectGoogleAdsAccounts, getPrimaryOrganizationForUser } from "@growthpilot/core";
 
 const STATE_COOKIE = "ga_oauth_state";
 
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!session?.user) return NextResponse.redirect(appUrl("/login"));
 
   const context = await getPrimaryOrganizationForUser(session.user.id);
-  if (!context) return NextResponse.redirect(new URL("/signup", req.url));
+  if (!context) return NextResponse.redirect(appUrl("/signup"));
 
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
   const expectedState = cookieStore.get(STATE_COOKIE)?.value;
   cookieStore.delete(STATE_COOKIE);
 
-  const failUrl = new URL("/dashboard/paid-ads", req.url);
+  const failUrl = appUrl("/dashboard/paid-ads");
 
   if (error) {
     failUrl.searchParams.set("error", error);
@@ -43,5 +44,5 @@ export async function GET(req: Request) {
     return NextResponse.redirect(failUrl);
   }
 
-  return NextResponse.redirect(new URL("/dashboard/paid-ads?connected=1", req.url));
+  return NextResponse.redirect(appUrl("/dashboard/paid-ads?connected=1"));
 }
