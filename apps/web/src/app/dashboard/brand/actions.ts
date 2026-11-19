@@ -2,9 +2,52 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { createBrand, getPrimaryOrganizationForUser } from "@growthpilot/core";
+import { createBrand, getPrimaryOrganizationForUser, suggestBrandDetails } from "@growthpilot/core";
 
 export type CreateBrandResult = { error: string } | undefined;
+
+export type SuggestBrandResult =
+  | {
+      error: string;
+    }
+  | {
+      industry: string;
+      targetAudience: string;
+      tone: string;
+      targetCountries: string[];
+      languages: string[];
+      valueProposition: string;
+      description: string;
+    }
+  | undefined;
+
+export async function suggestBrandAction(
+  _prev: SuggestBrandResult,
+  formData: FormData,
+): Promise<SuggestBrandResult> {
+  const session = await auth();
+  if (!session?.user) return { error: "Not signed in." };
+
+  const context = await getPrimaryOrganizationForUser(session.user.id);
+  if (!context) return { error: "No organization found." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "Enter a brand name first." };
+
+  try {
+    const suggestion = await suggestBrandDetails({
+      organizationId: context.organization.id,
+      actorUserId: session.user.id,
+      name,
+      website: String(formData.get("website") ?? "") || undefined,
+      description: String(formData.get("description") ?? "") || undefined,
+    });
+    return suggestion;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not generate suggestions.";
+    return { error: message };
+  }
+}
 
 export async function createBrandAction(
   _prev: CreateBrandResult,

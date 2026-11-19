@@ -1,8 +1,10 @@
 import { prisma } from "@growthpilot/db";
+import { suggestBrandProfile } from "@growthpilot/ai";
 import { requireMembership, requirePermission } from "./rbac";
 import { PERMISSIONS } from "./permissions";
 import { slugify } from "./slug";
 import { writeAuditLog } from "./audit";
+import { recordUsage } from "./usage";
 import { ConflictError } from "./errors";
 
 export async function createWorkspace(input: {
@@ -95,6 +97,38 @@ export async function createBrand(input: {
   });
 
   return brand;
+}
+
+/**
+ * Preview-only: does not write a Brand row. The caller shows the suggestion
+ * to the user, who reviews and edits it before saving via createBrand.
+ */
+export async function suggestBrandDetails(input: {
+  organizationId: string;
+  actorUserId: string;
+  name: string;
+  website?: string;
+  description?: string;
+}) {
+  await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.BRAND_MANAGE);
+
+  const result = await suggestBrandProfile({
+    name: input.name,
+    website: input.website,
+    description: input.description,
+  });
+
+  await recordUsage({
+    organizationId: input.organizationId,
+    feature: "brand_suggestion",
+    provider: "openai",
+    model: result.model,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
+    createdByUserId: input.actorUserId,
+  });
+
+  return result.data;
 }
 
 export async function listBrands(organizationId: string, actorUserId: string) {
