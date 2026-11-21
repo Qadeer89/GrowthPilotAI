@@ -70,43 +70,51 @@ async function exchangeForLongLivedUserToken(shortLivedToken: string): Promise<s
 
 export type InstagramAccount = { igUserId: string; username: string; pageAccessToken: string };
 
+type DebugTokenData = {
+  data?: { granular_scopes?: { scope: string; target_ids?: string[] }[] };
+};
+
+/**
+ * Pages granted through the asset picker in Facebook Login for Business
+ * aren't listed by /me/accounts for this kind of token -- the Page IDs have
+ * to be read back from the token's own granular scopes instead.
+ */
+async function resolveGrantedPageIds(userToken: string): Promise<string[]> {
+  const { appId, appSecret } = config();
+  const response = await fetch(
+    `${GRAPH_BASE}/debug_token?input_token=${encodeURIComponent(userToken)}&access_token=${encodeURIComponent(`${appId}|${appSecret}`)}`,
+  );
+  if (!response.ok) {
+    throw new Error(`Instagram token inspection failed (${response.status}): ${await response.text()}`);
+  }
+  const data = (await response.json()) as DebugTokenData;
+  const pageScope = data.data?.granular_scopes?.find((s) => s.scope === "pages_show_list");
+  return pageScope?.target_ids ?? [];
+}
+
 /** Only Pages with a linked Instagram professional account are returned. */
 export async function listInstagramAccounts(code: string): Promise<InstagramAccount[]> {
   const shortLivedToken = await exchangeCodeForUserToken(code);
   const userToken = await exchangeForLongLivedUserToken(shortLivedToken);
 
-  const permsResponse = await fetch(`${GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(userToken)}`);
-  const permsData = await permsResponse.json().catch(() => null);
-  console.error("[instagram-debug] granted permissions:", JSON.stringify(permsData));
+  const pageIds = await resolveGrantedPageIds(userToken);
 
-  const { appId, appSecret } = config();
-  const debugTokenResponse = await fetch(
-    `${GRAPH_BASE}/debug_token?input_token=${encodeURIComponent(userToken)}&access_token=${encodeURIComponent(`${appId}|${appSecret}`)}`,
-  );
-  const debugTokenData = await debugTokenResponse.json().catch(() => null);
-  console.error("[instagram-debug] debug_token:", JSON.stringify(debugTokenData));
-
-  const directPageCheck = await fetch(
-    `${GRAPH_BASE}/1343202022220358?fields=name,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
-  );
-  console.error("[instagram-debug] direct page check status:", directPageCheck.status, "body:", await directPageCheck.clone().text());
-
-  const response = await fetch(
-    `${GRAPH_BASE}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
-  );
-  if (!response.ok) {
-    throw new Error(`Instagram account list failed (${response.status}): ${await response.text()}`);
-  }
-  const data = (await response.json()) as {
-    data: { id: string; name: string; access_token: string; instagram_business_account?: { id: string; username: string } }[];
-  };
-
-  console.error(
-    "[instagram-debug] pages returned:",
-    JSON.stringify(data.data.map((p) => ({ id: p.id, name: p.name, instagram_business_account: p.instagram_business_account ?? null }))),
+  const pages = await Promise.all(
+    pageIds.map(async (pageId) => {
+      const response = await fetch(
+        `${GRAPH_BASE}/${pageId}?fields=access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
+      );
+      if (!response.ok) {
+        throw new Error(`Instagram page lookup failed (${response.status}): ${await response.text()}`);
+      }
+      return (await response.json()) as {
+        access_token: string;
+        instagram_business_account?: { id: string; username: string };
+      };
+    }),
   );
 
-  return data.data
+  return pages
     .filter((p): p is typeof p & { instagram_business_account: { id: string; username: string } } =>
       Boolean(p.instagram_business_account),
     )
