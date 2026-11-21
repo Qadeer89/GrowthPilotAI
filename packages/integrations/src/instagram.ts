@@ -79,6 +79,11 @@ export async function listInstagramAccounts(code: string): Promise<InstagramAcco
   const permsData = await permsResponse.json().catch(() => null);
   console.error("[instagram-debug] granted permissions:", JSON.stringify(permsData));
 
+  const directPageCheck = await fetch(
+    `${GRAPH_BASE}/1344202022220358?fields=name,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
+  );
+  console.error("[instagram-debug] direct page check status:", directPageCheck.status, "body:", await directPageCheck.clone().text());
+
   const response = await fetch(
     `${GRAPH_BASE}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
   );
