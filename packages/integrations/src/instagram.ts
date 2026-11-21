@@ -82,8 +82,13 @@ export async function listInstagramAccounts(code: string): Promise<InstagramAcco
     throw new Error(`Instagram account list failed (${response.status}): ${await response.text()}`);
   }
   const data = (await response.json()) as {
-    data: { id: string; access_token: string; instagram_business_account?: { id: string; username: string } }[];
+    data: { id: string; name: string; access_token: string; instagram_business_account?: { id: string; username: string } }[];
   };
+
+  console.error(
+    "[instagram-debug] pages returned:",
+    JSON.stringify(data.data.map((p) => ({ id: p.id, name: p.name, instagram_business_account: p.instagram_business_account ?? null }))),
+  );
 
   return data.data
     .filter((p): p is typeof p & { instagram_business_account: { id: string; username: string } } =>
