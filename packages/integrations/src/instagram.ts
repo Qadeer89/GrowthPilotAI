@@ -87,7 +87,7 @@ export async function listInstagramAccounts(code: string): Promise<InstagramAcco
   console.error("[instagram-debug] debug_token:", JSON.stringify(debugTokenData));
 
   const directPageCheck = await fetch(
-    `${GRAPH_BASE}/1344202022220358?fields=name,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
+    `${GRAPH_BASE}/1343202022220358?fields=name,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
   );
   console.error("[instagram-debug] direct page check status:", directPageCheck.status, "body:", await directPageCheck.clone().text());
 
