@@ -9,6 +9,8 @@ import {
   listFacebookPages,
   publishFacebookPagePost,
   publishFacebookPageVideo,
+  buildInstagramAuthorizationUrl,
+  listInstagramAccounts,
   buildXAuthorizationUrl,
   exchangeXCode,
   fetchXIdentity,
@@ -30,6 +32,10 @@ export function getFacebookAuthorizationUrl(state: string): string {
 
 export function getXAuthorizationUrl(state: string, codeChallenge: string): string {
   return buildXAuthorizationUrl(state, codeChallenge);
+}
+
+export function getInstagramAuthorizationUrl(state: string): string {
+  return buildInstagramAuthorizationUrl(state);
 }
 
 // A Facebook user can manage multiple Pages; each Page becomes its own
@@ -82,6 +88,69 @@ export async function connectFacebookPages(input: {
         expiresAt,
       },
       update: { accessTokenEncrypted: encryptSecret(page.accessToken), expiresAt },
+    });
+
+    await writeAuditLog({
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId,
+      action: "integration.connected",
+      targetType: "ConnectedAccount",
+      targetId: account.id,
+    });
+
+    accounts.push(account);
+  }
+
+  return accounts;
+}
+
+/** Same account-discovery shape as connectFacebookPages, for the linked Instagram accounts instead. */
+export async function connectInstagramAccounts(input: {
+  organizationId: string;
+  actorUserId: string;
+  code: string;
+}) {
+  await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.ORG_MANAGE_INTEGRATIONS);
+
+  const igAccounts = await listInstagramAccounts(input.code);
+  if (igAccounts.length === 0) {
+    throw new ConflictError(
+      "No Instagram professional account found. Link an Instagram Business/Creator account to one of your Facebook Pages first.",
+    );
+  }
+
+  const accounts = [];
+  const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+
+  for (const ig of igAccounts) {
+    const account = await prisma.connectedAccount.upsert({
+      where: {
+        organizationId_provider_providerAccountId: {
+          organizationId: input.organizationId,
+          provider: "instagram",
+          providerAccountId: ig.igUserId,
+        },
+      },
+      create: {
+        organizationId: input.organizationId,
+        provider: "instagram",
+        providerAccountId: ig.igUserId,
+        displayName: ig.username,
+        status: "connected",
+        connectedByUserId: input.actorUserId,
+      },
+      update: { status: "connected", displayName: ig.username },
+    });
+
+    await prisma.oAuthToken.upsert({
+      where: { connectedAccountId: account.id },
+      create: {
+        connectedAccountId: account.id,
+        accessTokenEncrypted: encryptSecret(ig.pageAccessToken),
+        scope: "instagram_content_publish",
+        expiresAt,
+      },
+      update: { accessTokenEncrypted: encryptSecret(ig.pageAccessToken), expiresAt },
     });
 
     await writeAuditLog({

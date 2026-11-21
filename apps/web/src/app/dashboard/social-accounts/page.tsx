@@ -36,6 +36,9 @@ export default async function SocialAccountsPage({
         <a href="/api/auth/facebook/start" className="gp-btn-primary">
           Connect Facebook Page
         </a>
+        <a href="/api/auth/instagram/start" className="gp-btn-primary">
+          Connect Instagram
+        </a>
         <a href="/api/auth/x/start" className="gp-btn-primary">
           Connect X
         </a>
