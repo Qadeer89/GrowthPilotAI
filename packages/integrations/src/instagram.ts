@@ -75,6 +75,10 @@ export async function listInstagramAccounts(code: string): Promise<InstagramAcco
   const shortLivedToken = await exchangeCodeForUserToken(code);
   const userToken = await exchangeForLongLivedUserToken(shortLivedToken);
 
+  const permsResponse = await fetch(`${GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(userToken)}`);
+  const permsData = await permsResponse.json().catch(() => null);
+  console.error("[instagram-debug] granted permissions:", JSON.stringify(permsData));
+
   const response = await fetch(
     `${GRAPH_BASE}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(userToken)}`,
   );
