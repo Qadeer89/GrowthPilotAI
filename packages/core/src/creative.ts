@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { prisma, type Prisma } from "@growthpilot/db";
-import { generateImage, generateSpeech, generateVideoScript, type BrandBrief } from "@growthpilot/ai";
+import { generateImage, generateSpeech, generateVideoScript, generateVideoTopicSuggestions, type BrandBrief } from "@growthpilot/ai";
 import { requireMembership, requirePermission } from "./rbac";
 import { PERMISSIONS } from "./permissions";
 import { writeAuditLog } from "./audit";
@@ -63,6 +63,18 @@ async function attachAssets(project: VideoProjectWithScenes) {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+export async function suggestVideoTopics(input: {
+  organizationId: string;
+  brandId: string;
+  actorUserId: string;
+}): Promise<string[]> {
+  await requireMembership(input.organizationId, input.actorUserId);
+
+  const brand = await loadBrand(input.organizationId, input.brandId);
+  const result = await generateVideoTopicSuggestions(toBrandBrief(brand));
+  return result.data;
 }
 
 export async function generateAndSaveVideoScript(input: {

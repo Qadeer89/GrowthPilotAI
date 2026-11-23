@@ -9,9 +9,32 @@ import {
   getPrimaryOrganizationForUser,
   publishVideoProject,
   renderVideo,
+  suggestVideoTopics,
 } from "@growthpilot/core";
 
 export type ActionResult = { error: string } | undefined;
+
+export type SuggestTopicsResult = { topics: string[] } | { error: string };
+
+export async function suggestTopicsAction(brandId: string): Promise<SuggestTopicsResult> {
+  const session = await auth();
+  if (!session?.user) return { error: "Not signed in." };
+
+  const context = await getPrimaryOrganizationForUser(session.user.id);
+  if (!context) return { error: "No organization found." };
+
+  try {
+    const topics = await suggestVideoTopics({
+      organizationId: context.organization.id,
+      brandId,
+      actorUserId: session.user.id,
+    });
+    return { topics };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not suggest topics.";
+    return { error: message };
+  }
+}
 
 export async function generateScriptAction(
   _prev: ActionResult,
