@@ -125,6 +125,28 @@ export async function listInstagramAccounts(code: string): Promise<InstagramAcco
     }));
 }
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMediaContainerReady(creationId: string, accessToken: string): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const response = await fetch(
+      `${GRAPH_BASE}/${creationId}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`,
+    );
+    if (!response.ok) {
+      throw new Error(`Instagram media status check failed (${response.status}): ${await response.text()}`);
+    }
+    const { status_code: statusCode } = (await response.json()) as { status_code: string };
+    if (statusCode === "FINISHED") return;
+    if (statusCode === "ERROR" || statusCode === "EXPIRED") {
+      throw new Error(`Instagram media processing failed (status: ${statusCode})`);
+    }
+    await sleep(3000);
+  }
+  throw new Error("Instagram media processing timed out");
+}
+
 export type InstagramPublishResult = { postId: string; postUrl: string };
 
 /**
@@ -154,6 +176,12 @@ export async function publishInstagramPost(input: {
     throw new Error(`Instagram media container failed (${createResponse.status}): ${await createResponse.text()}`);
   }
   const { id: creationId } = (await createResponse.json()) as { id: string };
+
+  // Instagram processes uploaded video asynchronously -- publishing before
+  // it reports FINISHED fails with "media is not ready" (error 2207027).
+  if (input.mediaType === "VIDEO") {
+    await waitForMediaContainerReady(creationId, input.pageAccessToken);
+  }
 
   const publishResponse = await fetch(`${GRAPH_BASE}/${input.igUserId}/media_publish`, {
     method: "POST",

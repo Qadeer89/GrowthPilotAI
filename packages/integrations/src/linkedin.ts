@@ -183,7 +183,7 @@ export async function publishLinkedInVideoPost(input: {
       "X-Restli-Protocol-Version": "2.0.0",
       "Linkedin-Version": LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify({ finalizeUploadRequest: { video: videoUrn, uploadedPartIds } }),
+    body: JSON.stringify({ finalizeUploadRequest: { video: videoUrn, uploadToken: "", uploadedPartIds } }),
   });
   if (!finalizeResponse.ok) {
     throw new Error(`LinkedIn video upload finalize failed (${finalizeResponse.status}): ${await finalizeResponse.text()}`);
