@@ -12,6 +12,7 @@ export * from "./usage";
 export * from "./strategy";
 export * from "./content";
 export * from "./creative";
+export * from "./asset-links";
 export * from "./integrations";
 export * from "./campaigns";
 export * from "./emails";

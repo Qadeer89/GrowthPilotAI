@@ -357,6 +357,7 @@ export async function publishVideoProject(input: {
   return publishSocialVideo({
     organizationId: input.organizationId,
     videoProjectId: project.id,
+    assetId: asset.id,
     fileBuffer,
     mimeType: asset.mimeType ?? "video/mp4",
     description: project.topic,

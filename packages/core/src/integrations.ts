@@ -11,16 +11,20 @@ import {
   publishFacebookPageVideo,
   buildInstagramAuthorizationUrl,
   listInstagramAccounts,
+  publishInstagramPost,
   buildXAuthorizationUrl,
   exchangeXCode,
   fetchXIdentity,
   publishXPost,
+  publishXVideoPost,
+  publishLinkedInVideoPost,
 } from "@growthpilot/integrations";
 import { requireMembership, requirePermission } from "./rbac";
 import { PERMISSIONS } from "./permissions";
 import { writeAuditLog } from "./audit";
 import { NotFoundError, ConflictError } from "./errors";
 import { encryptSecret, decryptSecret } from "./crypto";
+import { getPublicAssetUrl } from "./asset-links";
 
 export function getLinkedInAuthorizationUrl(state: string): string {
   return buildLinkedInAuthorizationUrl(state);
@@ -332,6 +336,8 @@ async function doPublish(
       });
       return { postUrn: result.tweetId, postUrl: result.postUrl };
     }
+    case "instagram":
+      throw new Error("Instagram posts require an image or video -- text-only posts aren't supported by its API.");
     default:
       throw new Error(`Publishing isn't implemented for provider "${account.provider}"`);
   }
@@ -408,11 +414,14 @@ async function doPublishVideo(
   accessTokenEncrypted: string,
   fileBuffer: Buffer,
   mimeType: string,
-  description?: string,
+  description: string | undefined,
+  organizationId: string,
+  assetId: string,
 ) {
+  const accessToken = decryptSecret(accessTokenEncrypted);
+
   switch (account.provider) {
     case "facebook": {
-      const accessToken = decryptSecret(accessTokenEncrypted);
       const result = await publishFacebookPageVideo({
         pageId: account.providerAccountId,
         pageAccessToken: accessToken,
@@ -422,8 +431,40 @@ async function doPublishVideo(
       });
       return { postUrn: result.postId, postUrl: result.postUrl };
     }
+    case "instagram": {
+      // Instagram's Graph API only accepts media by public URL, not a raw
+      // upload -- mint a short-lived signed link to this asset instead.
+      const mediaUrl = getPublicAssetUrl(organizationId, assetId);
+      const result = await publishInstagramPost({
+        igUserId: account.providerAccountId,
+        pageAccessToken: accessToken,
+        mediaUrl,
+        mediaType: "VIDEO",
+        caption: description,
+      });
+      return { postUrn: result.postId, postUrl: result.postUrl };
+    }
+    case "linkedin": {
+      const result = await publishLinkedInVideoPost({
+        accessToken,
+        memberId: account.providerAccountId,
+        fileBuffer,
+        text: description ?? "",
+      });
+      return { postUrn: result.postUrn, postUrl: result.postUrl };
+    }
+    case "x": {
+      const result = await publishXVideoPost({
+        accessToken,
+        username: account.displayName ?? account.providerAccountId,
+        text: description ?? "",
+        fileBuffer,
+        mimeType,
+      });
+      return { postUrn: result.tweetId, postUrl: result.postUrl };
+    }
     default:
-      throw new Error(`Video publishing isn't implemented yet for "${account.provider}" (text posts work there today).`);
+      throw new Error(`Video publishing isn't implemented yet for "${account.provider}".`);
   }
 }
 
@@ -437,6 +478,7 @@ async function doPublishVideo(
 export async function publishSocialVideo(input: {
   organizationId: string;
   videoProjectId: string;
+  assetId: string;
   fileBuffer: Buffer;
   mimeType: string;
   description?: string;
@@ -469,7 +511,15 @@ export async function publishSocialVideo(input: {
     });
 
     try {
-      const result = await doPublishVideo(account, account.oauthToken.accessTokenEncrypted, input.fileBuffer, input.mimeType, input.description);
+      const result = await doPublishVideo(
+        account,
+        account.oauthToken.accessTokenEncrypted,
+        input.fileBuffer,
+        input.mimeType,
+        input.description,
+        input.organizationId,
+        input.assetId,
+      );
       await prisma.socialPost.update({
         where: { id: post.id },
         data: { status: "published", providerPostId: result.postUrn, providerPostUrl: result.postUrl },

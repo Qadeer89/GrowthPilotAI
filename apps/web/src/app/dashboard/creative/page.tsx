@@ -4,12 +4,23 @@ import { getPrimaryOrganizationForUser, listBrands, listVideoProjects } from "@g
 import { NewVideoForm } from "./NewVideoForm";
 import { VideoProjectCard } from "./VideoProjectCard";
 
+type PublishDetail = { provider: string; account: string; status: "published" | "failed"; reason?: string };
+
 export default async function CreativePage({
   searchParams,
 }: {
-  searchParams: Promise<{ published?: string; failed?: string }>;
+  searchParams: Promise<{ published?: string; failed?: string; details?: string }>;
 }) {
-  const { published, failed } = await searchParams;
+  const { published, failed, details } = await searchParams;
+  let publishDetails: PublishDetail[] = [];
+  if (details) {
+    try {
+      publishDetails = JSON.parse(decodeURIComponent(details));
+    } catch {
+      publishDetails = [];
+    }
+  }
+  const failedDetails = publishDetails.filter((d) => d.status === "failed");
   const session = await auth();
   const context = await getPrimaryOrganizationForUser(session!.user.id);
   const organizationId = context!.organization.id;
@@ -41,18 +52,27 @@ export default async function CreativePage({
       </p>
 
       {(published !== undefined || failed !== undefined) && (
-        <p className="mt-3 text-sm">
+        <div className="mt-3 text-sm">
           {Number(published) > 0 && (
-            <span className="text-[var(--color-success)]">
+            <p className="text-[var(--color-success)]">
               Published to {published} connected account{Number(published) === 1 ? "" : "s"}.
-            </span>
+            </p>
           )}
           {Number(failed) > 0 && (
-            <span className="ml-2 text-[var(--color-danger)]">
+            <p className="text-[var(--color-danger)]">
               {failed} publish attempt{Number(failed) === 1 ? "" : "s"} failed.
-            </span>
+            </p>
           )}
-        </p>
+          {failedDetails.length > 0 && (
+            <ul className="mt-1 list-disc pl-5 text-[var(--color-danger)]">
+              {failedDetails.map((d, i) => (
+                <li key={i} className="capitalize">
+                  {d.provider} ({d.account}): <span className="normal-case">{d.reason ?? "Unknown error"}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       <section className="mt-6 gp-card p-6">

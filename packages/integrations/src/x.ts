@@ -109,3 +109,110 @@ export async function publishXPost(input: { accessToken: string; username: strin
   const data = (await response.json()) as { data: { id: string } };
   return { tweetId: data.data.id, postUrl: `https://x.com/${input.username}/status/${data.data.id}` };
 }
+
+const MEDIA_UPLOAD_URL = "https://api.x.com/2/media/upload";
+const CHUNK_SIZE_BYTES = 4 * 1024 * 1024;
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * X's chunked media upload (INIT/APPEND/FINALIZE, then poll STATUS until
+ * processing finishes) via the v2 endpoint, which accepts the same OAuth 2.0
+ * user-context Bearer token this codebase already has -- no separate
+ * OAuth 1.0a credentials needed.
+ */
+async function uploadXVideo(accessToken: string, fileBuffer: Buffer, mimeType: string): Promise<string> {
+  const initResponse = await fetch(MEDIA_UPLOAD_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      command: "INIT",
+      total_bytes: fileBuffer.byteLength,
+      media_type: mimeType,
+      media_category: "tweet_video",
+    }),
+  });
+  if (!initResponse.ok) {
+    throw new Error(`X media upload init failed (${initResponse.status}): ${await initResponse.text()}`);
+  }
+  const { data: initData } = (await initResponse.json()) as { data: { id: string } };
+  const mediaId = initData.id;
+
+  let segmentIndex = 0;
+  for (let offset = 0; offset < fileBuffer.byteLength; offset += CHUNK_SIZE_BYTES) {
+    const chunk = fileBuffer.subarray(offset, offset + CHUNK_SIZE_BYTES);
+    const form = new FormData();
+    form.append("command", "APPEND");
+    form.append("media_id", mediaId);
+    form.append("segment_index", String(segmentIndex));
+    form.append("media", new Blob([new Uint8Array(chunk)]));
+
+    const appendResponse = await fetch(MEDIA_UPLOAD_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+    if (!appendResponse.ok) {
+      throw new Error(`X media upload append failed (${appendResponse.status}): ${await appendResponse.text()}`);
+    }
+    segmentIndex += 1;
+  }
+
+  const finalizeResponse = await fetch(MEDIA_UPLOAD_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ command: "FINALIZE", media_id: mediaId }),
+  });
+  if (!finalizeResponse.ok) {
+    throw new Error(`X media upload finalize failed (${finalizeResponse.status}): ${await finalizeResponse.text()}`);
+  }
+  let finalizeData = (await finalizeResponse.json()) as {
+    data: { id: string; processing_info?: { state: string; check_after_secs?: number } };
+  };
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const state = finalizeData.data.processing_info?.state;
+    if (!state || state === "succeeded") break;
+    if (state === "failed") {
+      throw new Error(`X media processing failed for media ${mediaId}`);
+    }
+    await sleep((finalizeData.data.processing_info?.check_after_secs ?? 1) * 1000);
+    const statusResponse = await fetch(`${MEDIA_UPLOAD_URL}?command=STATUS&media_id=${encodeURIComponent(mediaId)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!statusResponse.ok) {
+      throw new Error(`X media upload status check failed (${statusResponse.status}): ${await statusResponse.text()}`);
+    }
+    finalizeData = (await statusResponse.json()) as typeof finalizeData;
+  }
+
+  return mediaId;
+}
+
+export async function publishXVideoPost(input: {
+  accessToken: string;
+  username: string;
+  text: string;
+  fileBuffer: Buffer;
+  mimeType: string;
+}): Promise<XPublishResult> {
+  const mediaId = await uploadXVideo(input.accessToken, input.fileBuffer, input.mimeType);
+
+  const response = await fetch(`${API_BASE}/tweets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: input.text, media: { media_ids: [mediaId] } }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`X video post failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { data: { id: string } };
+  return { tweetId: data.data.id, postUrl: `https://x.com/${input.username}/status/${data.data.id}` };
+}

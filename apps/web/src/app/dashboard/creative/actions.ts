@@ -104,5 +104,6 @@ export async function publishVideoAction(formData: FormData) {
 
   const published = results.filter((r) => r.status === "published").length;
   const failed = results.filter((r) => r.status === "failed").length;
-  redirect(`/dashboard/creative?published=${published}&failed=${failed}`);
+  const details = encodeURIComponent(JSON.stringify(results));
+  redirect(`/dashboard/creative?published=${published}&failed=${failed}&details=${details}`);
 }

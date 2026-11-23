@@ -73,3 +73,46 @@ export function verifyUnsubscribeToken(token: string): { organizationId: string;
   if (!organizationId || !email) return null;
   return { organizationId, email };
 }
+
+// Instagram's publish API only accepts media by public URL, but creative
+// assets otherwise live behind an authenticated route -- this signs a
+// short-lived, asset-specific token so a single unauthenticated fetch (by
+// Instagram's own servers) can retrieve exactly one asset until it expires,
+// without exposing the asset permanently or requiring a session cookie.
+function getPublicAssetKey(): Buffer {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) throw new Error("AUTH_SECRET is not configured");
+  const derived = crypto.hkdfSync(
+    "sha256",
+    Buffer.from(secret, "base64"),
+    Buffer.alloc(0),
+    Buffer.from("growthpilot-public-asset-token-v1"),
+    32,
+  );
+  return Buffer.from(derived);
+}
+
+export function createPublicAssetToken(organizationId: string, assetId: string, expiresAt: Date): string {
+  const payload = `${organizationId}:${assetId}:${expiresAt.getTime()}`;
+  const signature = crypto.createHmac("sha256", getPublicAssetKey()).update(payload).digest("base64url");
+  return `${Buffer.from(payload, "utf8").toString("base64url")}.${signature}`;
+}
+
+export function verifyPublicAssetToken(token: string, assetId: string): { organizationId: string } | null {
+  const [payloadB64, signature] = token.split(".");
+  if (!payloadB64 || !signature) return null;
+
+  const payload = Buffer.from(payloadB64, "base64url").toString("utf8");
+  const expectedSignature = crypto.createHmac("sha256", getPublicAssetKey()).update(payload).digest("base64url");
+
+  const valid =
+    signature.length === expectedSignature.length &&
+    crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+  if (!valid) return null;
+
+  const [organizationId, tokenAssetId, expiresAtMs] = payload.split(":");
+  if (!organizationId || !tokenAssetId || !expiresAtMs) return null;
+  if (tokenAssetId !== assetId) return null;
+  if (Date.now() > Number(expiresAtMs)) return null;
+  return { organizationId };
+}
