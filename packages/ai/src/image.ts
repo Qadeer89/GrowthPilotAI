@@ -1,9 +1,10 @@
 import { getOpenAiClient } from "./client";
 
-// gpt-image-1 (full, not -mini) for noticeably more photorealistic,
-// professional-looking marketing visuals -- costs ~10x gpt-image-1-mini,
-// a deliberate tradeoff confirmed with the business owner.
-const IMAGE_MODEL = "gpt-image-1";
+// gpt-image-1 (full) isn't available on this OpenAI account (returns "model
+// does not exist" -- needs separate org verification not yet done);
+// gpt-image-1-mini is what's actually usable, so quality improvements have
+// to come from prompting instead of the pricier model for now.
+const IMAGE_MODEL = "gpt-image-1-mini";
 const IMAGE_SIZE = "1024x1024";
 const IMAGE_QUALITY = "high";
 
@@ -12,7 +13,7 @@ const IMAGE_QUALITY = "high";
 // here so callers can record *something* into usage/cost tracking rather
 // than nothing — it is explicitly an estimate, never a provider-confirmed
 // billed amount.
-const ESTIMATED_COST_USD = 0.08;
+const ESTIMATED_COST_USD = 0.01;
 
 export type GeneratedImage = {
   base64: string;
