@@ -491,10 +491,22 @@ export async function publishSocialVideo(input: {
     include: { oauthToken: true },
   });
 
+  // Re-publishing (e.g. after some accounts failed) must not re-post to
+  // accounts that already succeeded for this video.
+  const alreadyPublished = await prisma.socialPost.findMany({
+    where: { videoProjectId: input.videoProjectId, status: "published" },
+    select: { connectedAccountId: true },
+  });
+  const alreadyPublishedAccountIds = new Set(alreadyPublished.map((p) => p.connectedAccountId));
+
   const results: { provider: string; account: string; status: "published" | "failed"; postUrl?: string; reason?: string }[] = [];
 
   for (const account of accounts) {
     if (!account.oauthToken) continue;
+    if (alreadyPublishedAccountIds.has(account.id)) {
+      results.push({ provider: account.provider, account: account.displayName ?? account.providerAccountId, status: "published" });
+      continue;
+    }
 
     const post = await prisma.socialPost.create({
       data: {
