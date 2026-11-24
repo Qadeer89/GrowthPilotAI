@@ -63,7 +63,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard/team", label: "Team & Permissions", enabled: true },
       { href: "#", label: "Integrations", enabled: false },
-      { href: "#", label: "Usage & Billing", enabled: false },
+      { href: "/dashboard/billing", label: "Usage & Billing", enabled: true },
+      { href: "/dashboard/admin/plans", label: "Billing Plans (admin)", enabled: true },
     ],
   },
 ];

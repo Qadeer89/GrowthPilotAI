@@ -8,6 +8,7 @@ import { NotFoundError, ConflictError } from "./errors";
 import { writeAssetFile, resolveAssetFile } from "./storage";
 import { assembleVideo } from "./video-render";
 import { publishSocialVideo } from "./integrations";
+import { enforceUsageLimit } from "./billing";
 
 async function loadBrand(organizationId: string, brandId: string) {
   const brand = await prisma.brand.findFirst({ where: { id: brandId, organizationId } });
@@ -84,6 +85,14 @@ export async function generateAndSaveVideoScript(input: {
   topic: string;
 }) {
   await requirePermission(input.organizationId, input.actorUserId, PERMISSIONS.CREATIVE_MANAGE);
+
+  const periodStart = new Date();
+  periodStart.setDate(1);
+  periodStart.setHours(0, 0, 0, 0);
+  const videoProjectsThisMonth = await prisma.videoProject.count({
+    where: { organizationId: input.organizationId, createdAt: { gte: periodStart } },
+  });
+  await enforceUsageLimit(input.organizationId, "monthlyVideoProjects", videoProjectsThisMonth);
 
   const brand = await loadBrand(input.organizationId, input.brandId);
   const result = await generateVideoScript(toBrandBrief(brand), input.topic);

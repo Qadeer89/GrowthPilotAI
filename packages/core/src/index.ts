@@ -22,3 +22,4 @@ export * from "./agent";
 export * from "./analytics";
 export * from "./optimization";
 export * from "./rate-limit";
+export * from "./billing";

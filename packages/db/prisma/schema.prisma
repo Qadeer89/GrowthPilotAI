@@ -37,6 +37,9 @@ model Organization {
   brands           Brand[]
   auditLogs        AuditLog[]
   usageRecords     UsageRecord[]
+  subscription     Subscription?
+  billingCustomer  BillingCustomer?
+  transactions     Transaction[]
   creativeAssets   CreativeAsset[]
   connectedAccounts ConnectedAccount[]
   socialPosts      SocialPost[]
@@ -724,6 +727,117 @@ model UsageRecord {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+// ---------- Billing (Paddle) ----------
+//
+// Billing is scoped to Organization, not User -- every other paid resource
+// in this schema (Brand, Campaign, ConnectedAccount, ...) already belongs to
+// an Organization, and GrowthPilot has no concept of a user outside one.
+// "Customer" in the Paddle sense maps 1:1 to an Organization here.
+//
+// Pricing has not been finalized: every Plan is created with isActive=false
+// and must be explicitly activated (business decision, not a code change)
+// before it can be checked out against.
+
+model Plan {
+  id                 String   @id @default(cuid())
+  key                String   @unique // stable machine name, e.g. "starter_monthly"
+  name               String
+  description        String?
+  billingInterval     String // "month" | "year" | "one_time" | "free"
+  amountMicros       BigInt? // null for the Free plan
+  currency           String  @default("USD")
+  paddleProductId    String?
+  paddlePriceId      String?
+  trialDays          Int?
+  featureEntitlements Json // e.g. { "creativeStudio": true, "paidAds": false }
+  usageLimits        Json // e.g. { "videosPerMonth": 10 }
+  isActive           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+// A Paddle customer record, one per organization. Created lazily on first
+// checkout or portal visit, not at organization signup.
+model BillingCustomer {
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+  paddleCustomerId String   @unique
+  email            String
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// One Paddle subscription per organization. Kept in sync by the Paddle
+// webhook handler -- this table is a read model of what Paddle thinks is
+// true, never written to directly from checkout. A row with no
+// paddleSubscriptionId and status "free" represents the unpaid default tier.
+model Subscription {
+  id                   String    @id @default(cuid())
+  organizationId       String    @unique
+  planId               String?
+  paddleCustomerId     String?
+  paddleSubscriptionId String?   @unique
+  paddleProductId      String?
+  paddlePriceId        String?
+  status               String // "free" | "trialing" | "active" | "past_due" | "canceled" | "paused"
+  billingInterval       String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         Plan?        @relation(fields: [planId], references: [id])
+  transactions Transaction[]
+
+  @@index([paddleCustomerId])
+  @@index([planId])
+}
+
+// One row per Paddle transaction (an invoice/charge attempt). Append-only --
+// never updated after insert except its status, which the webhook keeps current.
+model Transaction {
+  id                  String    @id @default(cuid())
+  organizationId      String
+  subscriptionId      String?
+  paddleTransactionId String    @unique
+  amountMicros        BigInt
+  currency            String
+  status              String // "billed" | "paid" | "past_due" | "completed" | "canceled"
+  invoiceId           String?
+  occurredAt           DateTime
+  createdAt           DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([subscriptionId])
+}
+
+// Every inbound Paddle webhook call, keyed by Paddle's own event id so a
+// retried/duplicate delivery is a no-op (checked before any side effect runs).
+model WebhookEvent {
+  id            String    @id @default(cuid())
+  paddleEventId String    @unique
+  eventType     String
+  status        String    @default("pending") // "pending" | "processed" | "failed"
+  payload       Json
+  errorDetail   String?
+  receivedAt    DateTime  @default(now())
+  processedAt   DateTime?
+
+  @@index([eventType])
+  @@index([status])
 }
 
 // Append-only audit trail (spec Section 17/20). Every sensitive action writes

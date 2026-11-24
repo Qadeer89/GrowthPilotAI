@@ -11,6 +11,7 @@
     "@growthpilot/ai": "*",
     "@growthpilot/db": "*",
     "@growthpilot/integrations": "*",
+    "@paddle/paddle-node-sdk": "^2.5.0",
     "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
