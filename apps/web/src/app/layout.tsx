@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GrowthPilot AI",
-  description: "AI marketing automation & campaign management",
+  title: "GrowthPilot AI — Your Entire Marketing Workflow, Powered by AI",
+  description:
+    "Strategy, content, video, campaigns, leads, and publishing in one AI-powered marketing workspace.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
